@@ -1,2 +1,3 @@
-packages:
+﻿packages:
   - "apps/*"
+  - "packages/*"

@@ -1,4 +1,4 @@
-node_modules
+﻿node_modules
 .pnpm-store
 .pnp*
 .next
@@ -12,3 +12,5 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+.env.*
+!.env.example

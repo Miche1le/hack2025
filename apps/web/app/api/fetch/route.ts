@@ -1,6 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import Parser from 'rss-parser';
-import { summarize } from '@/lib/summarize';
+import { summarize } from '@shared/summarize';
 
 const parser: Parser = new Parser({
   timeout: 10000

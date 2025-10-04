@@ -1,0 +1,12 @@
+{
+  "name": "@hack2025/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./summarize": "./summarize.ts"
+  },
+  "dependencies": {
+    "openai": "^4.104.0"
+  }
+}
