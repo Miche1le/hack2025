@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pulse — персональный агрегатор новостей</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="hero">
+    <div class="hero__inner">
+        <h1>Pulse</h1>
+        <p>Персональный агрегатор новостей, который помогает за минуты понять, что происходит в мире. Выберите источники, задайте ключевые слова и получайте краткую сводку каждого инфоповода в одном месте.</p>
+    </div>
+</header>
+<main class="container">
+    <section class="controls" aria-labelledby="filters-title">
+        <div>
+            <h2 id="filters-title">Настройка ленты</h2>
+            <p class="controls__hint">Обновления подтягиваются автоматически при запуске, повторите запрос в любой момент кнопкой «Обновить».</p>
+        </div>
+        <form id="filters-form">
+            <fieldset>
+                <legend>Источники</legend>
+                <div class="checkboxes">
+                    {% for source in sources %}
+                    <label class="checkbox">
+                        <input type="checkbox" name="sources" value="{{ source.key }}" checked />
+                        <span>{{ source.name }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </fieldset>
+            <div class="form-row">
+                <label for="query">Ключевые слова</label>
+                <input type="text" id="query" name="q" placeholder="например, technology, экономика" />
+            </div>
+            <div class="form-row">
+                <label for="limit">Количество карточек</label>
+                <input type="range" id="limit" name="limit" min="5" max="50" value="20" />
+                <span id="limit-value" class="range-value">20</span>
+            </div>
+            <div class="form-row form-row--actions">
+                <button type="submit" class="button">Обновить</button>
+                <button type="button" id="clear" class="button button--ghost">Сбросить фильтры</button>
+            </div>
+        </form>
+    </section>
+
+    <section class="feed" aria-live="polite">
+        <div id="loading" class="loading" hidden>Загружаем новости…</div>
+        <div id="empty" class="empty" hidden>
+            <h3>Нет совпадений</h3>
+            <p>Попробуйте изменить ключевые слова или расширить список источников.</p>
+        </div>
+        <div id="feed-grid" class="feed__grid"></div>
+    </section>
+</main>
+
+<footer class="footer">
+    <p>Сервис работает на базе открытых RSS-лент. Код доступен в открытом репозитории. Обновление сведений каждые 10 минут.</p>
+</footer>
+
+<script type="module" src="/static/app.js"></script>
+</body>
+</html>
