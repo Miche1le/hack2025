@@ -1,0 +1,17 @@
+{
+  "name": "hack2025-news-aggregator",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "build": "pnpm --filter web build",
+    "start": "pnpm --filter web start",
+    "lint": "pnpm --filter web lint"
+  },
+  "devDependencies": {
+    "typescript": "^5.2.2"
+  }
+}
