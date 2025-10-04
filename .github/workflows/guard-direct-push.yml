@@ -1,0 +1,107 @@
+name: guard-direct-push
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+
+permissions:
+  contents: write
+  pull-requests: write
+  statuses: write
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Detect direct push vs PR merge
+        id: detect
+        run: |
+          msg="${{ github.event.head_commit.message }}"
+          if echo "$msg" | grep -qi "merge pull request"; then
+            echo "is_pr_merge=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_pr_merge=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout repository
+        if: steps.detect.outputs.is_pr_merge == 'false'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prepare revert branch
+        if: steps.detect.outputs.is_pr_merge == 'false'
+        run: |
+          short_sha="${GITHUB_SHA::7}"
+          revert_branch="revert/${short_sha}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$revert_branch"
+          git revert --no-edit HEAD
+          git push origin "$revert_branch"
+
+      - name: Comment, set status, and open revert PR
+        if: steps.detect.outputs.is_pr_merge == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const octokit = github;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const branch = context.ref.replace('refs/heads/', '');
+            const sha = context.payload.after;
+            const actor = context.actor;
+            const short = sha.substring(0, 7);
+            const revertBranch = `revert/${short}`;
+            const commitUrl = `https://github.com/${owner}/${repo}/commit/${sha}`;
+
+            await octokit.rest.repos.createCommitStatus({
+              owner,
+              repo,
+              sha,
+              state: 'failure',
+              context: 'guard/direct-push',
+              description: 'Direct push detected (use PR)',
+              target_url: commitUrl
+            });
+
+            await octokit.rest.repos.createCommitComment({
+              owner,
+              repo,
+              commit_sha: sha,
+              body: [
+                'ALERT: direct push detected on a protected branch.',
+                `Branch: ${branch}`,
+                `Actor: ${actor}`,
+                `Commit: ${commitUrl}`,
+                '',
+                'Process requires changes to land via Pull Requests.',
+                'A revert pull request has been opened automatically.'
+              ].join('\n')
+            });
+
+            const title = `Guard: revert direct push ${short}`;
+            const body = [
+              `This PR reverts ${sha} pushed directly to ${branch}.`,
+              '',
+              'Review and merge to restore branch policy compliance.'
+            ].join('\n');
+
+            try {
+              await octokit.rest.pulls.create({
+                owner,
+                repo,
+                head: revertBranch,
+                base: branch,
+                title,
+                body
+              });
+            } catch (error) {
+              if (error.status !== 422) {
+                throw error;
+              }
+            }
+
+            core.setFailed(`Direct push detected on ${branch}. Revert PR opened.`);
