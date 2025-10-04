@@ -85,19 +85,22 @@ jobs:
                 `Commit: ${commitUrl}`,
                 '',
                 'Process requires changes to land via Pull Requests.',
-                'A revert pull request has been opened automatically.'
+                'An automatic revert PR has been opened for review.'
               ].join('\n')
             });
 
-            const title = `Guard: revert direct push ${short}`;
+            const title = `Revert direct push ${short} on ${branch}`;
             const body = [
-              `This PR reverts ${sha} pushed directly to ${branch}.`,
+              'API for automatic `git revert` is not available on GitHub,',
+              'so this PR asks a human to verify the diff and complete the revert in the UI.',
               '',
-              'Review and merge to restore branch policy compliance.'
+              `Commit: ${commitUrl}`,
+              `Push author: ${actor}`
             ].join('\n');
 
+            let prNumber;
             try {
-              await github.rest.pulls.create({
+              const { data: pr } = await github.rest.pulls.create({
                 owner,
                 repo,
                 head: revertBranch,
@@ -105,9 +108,33 @@ jobs:
                 title,
                 body
               });
+              prNumber = pr.number;
             } catch (error) {
-              if (error.status !== 422) {
+              if (error.status === 422) {
+                const { data: existing } = await github.rest.pulls.list({
+                  owner,
+                  repo,
+                  head: `${owner}:${revertBranch}`,
+                  state: 'open'
+                });
+                prNumber = existing.length ? existing[0].number : undefined;
+              } else {
                 throw error;
+              }
+            }
+
+            if (prNumber) {
+              try {
+                await github.rest.issues.addLabels({
+                  owner,
+                  repo,
+                  issue_number: prNumber,
+                  labels: ['guard/direct-push']
+                });
+              } catch (error) {
+                if (error.status !== 404) {
+                  throw error;
+                }
               }
             }
 
