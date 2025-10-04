@@ -17,13 +17,22 @@ jobs:
     steps:
       - name: Detect direct push vs PR merge
         id: detect
-        run: |
-          msg="${{ github.event.head_commit.message }}"
-          if echo "$msg" | grep -qi "merge pull request"; then
-            echo "is_pr_merge=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "is_pr_merge=false" >> "$GITHUB_OUTPUT"
-          fi
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const core = require('@actions/core');
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const sha = context.payload.after;
+
+            const { data: prs } = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+              owner,
+              repo,
+              commit_sha: sha
+            });
+
+            const isPrMerge = prs.some(pr => pr.merged_at);
+            core.setOutput('is_pr_merge', isPrMerge ? 'true' : 'false');
 
       - name: Checkout repository
         if: steps.detect.outputs.is_pr_merge == 'false'
