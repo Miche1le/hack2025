@@ -47,7 +47,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const octokit = github;
+            
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const branch = context.ref.replace('refs/heads/', '');
@@ -57,7 +57,7 @@ jobs:
             const revertBranch = `revert/${short}`;
             const commitUrl = `https://github.com/${owner}/${repo}/commit/${sha}`;
 
-            await octokit.rest.repos.createCommitStatus({
+            await github.rest.repos.createCommitStatus({
               owner,
               repo,
               sha,
@@ -67,7 +67,7 @@ jobs:
               target_url: commitUrl
             });
 
-            await octokit.rest.repos.createCommitComment({
+            await github.rest.repos.createCommitComment({
               owner,
               repo,
               commit_sha: sha,
@@ -90,7 +90,7 @@ jobs:
             ].join('\n');
 
             try {
-              await octokit.rest.pulls.create({
+              await github.rest.pulls.create({
                 owner,
                 repo,
                 head: revertBranch,
