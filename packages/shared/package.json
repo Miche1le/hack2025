@@ -4,9 +4,17 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./summarize": "./summarize.ts"
+    "./summarize": "./summarize.ts",
+    "./feed-utils": "./feed-utils.ts",
+    "./types": "./types.ts"
+  },
+  "scripts": {
+    "test": "tsx --test __tests__/feed-utils.test.ts"
   },
   "dependencies": {
     "openai": "^4.104.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.1"
   }
 }
