@@ -1,0 +1,141 @@
+name: guard-direct-push
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+
+permissions:
+  contents: write
+  pull-requests: write
+  statuses: write
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Detect direct push vs PR merge
+        id: detect
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const sha = context.payload.after;
+
+            const { data: prs } = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+              owner,
+              repo,
+              commit_sha: sha
+            });
+
+            const isPrMerge = prs.some(pr => pr.merged_at);
+            core.setOutput('is_pr_merge', isPrMerge ? 'true' : 'false');
+
+      - name: Checkout repository
+        if: steps.detect.outputs.is_pr_merge == 'false'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prepare revert branch
+        if: steps.detect.outputs.is_pr_merge == 'false'
+        run: |
+          short_sha="${GITHUB_SHA::7}"
+          revert_branch="revert/${short_sha}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$revert_branch"
+          git revert --no-edit HEAD
+          git push origin "$revert_branch"
+
+      - name: Comment, set status, and open revert PR
+        if: steps.detect.outputs.is_pr_merge == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const branch = context.ref.replace('refs/heads/', '');
+            const sha = context.payload.after;
+            const actor = context.actor;
+            const short = sha.substring(0, 7);
+            const revertBranch = `revert/${short}`;
+            const commitUrl = `https://github.com/${owner}/${repo}/commit/${sha}`;
+
+            await github.rest.repos.createCommitStatus({
+              owner,
+              repo,
+              sha,
+              state: 'failure',
+              context: 'guard/direct-push',
+              description: 'Direct push detected (use PR)',
+              target_url: commitUrl
+            });
+
+            await github.rest.repos.createCommitComment({
+              owner,
+              repo,
+              commit_sha: sha,
+              body: [
+                'ALERT: direct push detected on a protected branch.',
+                `Branch: ${branch}`,
+                `Actor: ${actor}`,
+                `Commit: ${commitUrl}`,
+                '',
+                'Process requires changes to land via Pull Requests.',
+                'An automatic revert PR has been opened for review.'
+              ].join('\n')
+            });
+
+            const title = `Revert direct push ${short} on ${branch}`;
+            const body = [
+              'API for automatic `git revert` is not available on GitHub,',
+              'so this PR asks a human to verify the diff and complete the revert in the UI.',
+              '',
+              `Commit: ${commitUrl}`,
+              `Push author: ${actor}`
+            ].join('\n');
+
+            let prNumber;
+            try {
+              const { data: pr } = await github.rest.pulls.create({
+                owner,
+                repo,
+                head: revertBranch,
+                base: branch,
+                title,
+                body
+              });
+              prNumber = pr.number;
+            } catch (error) {
+              if (error.status === 422) {
+                const { data: existing } = await github.rest.pulls.list({
+                  owner,
+                  repo,
+                  head: `${owner}:${revertBranch}`,
+                  state: 'open'
+                });
+                prNumber = existing.length ? existing[0].number : undefined;
+              } else {
+                throw error;
+              }
+            }
+
+            if (prNumber) {
+              try {
+                await github.rest.issues.addLabels({
+                  owner,
+                  repo,
+                  issue_number: prNumber,
+                  labels: ['guard/direct-push']
+                });
+              } catch (error) {
+                if (error.status !== 404) {
+                  throw error;
+                }
+              }
+            }
+
+            core.setFailed(`Direct push detected on ${branch}. Revert PR opened.`);

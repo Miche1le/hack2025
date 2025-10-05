@@ -1,0 +1,17 @@
+{
+  "name": "@hack2025/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./summarize": "./summarize.ts",
+    "./feed-utils": "./feed-utils.ts",
+    "./types": "./types.ts"
+  },
+  "scripts": {
+    "test": "vitest --run --config ../../vitest.config.ts packages/shared/__tests__/feed-utils.test.ts"
+  },
+  "dependencies": {
+    "openai": "^4.104.0"
+  }
+}

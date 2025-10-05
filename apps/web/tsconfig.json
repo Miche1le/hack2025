@@ -1,0 +1,50 @@
+﻿{
+    "extends":  "../../tsconfig.json",
+    "compilerOptions":  {
+                            "baseUrl":  ".",
+                            "paths":  {
+                                          "@/components/*":  [
+                                                                 "app/components/*"
+                                                             ],
+                                          "@/lib/*":  [
+                                                          "app/lib/*"
+                                                      ],
+                                          "@shared/*":  [
+                                                            "../../packages/shared/*"
+                                                        ],
+                                          "@services/*":  [
+                                                              "../../services/*"
+                                                          ]
+                                      },
+                            "types":  [
+                                          "node",
+                                          "next",
+                                          "next/types/global",
+                                          "next/navigation"
+                                      ],
+                            "allowJs":  true,
+                            "noEmit":  true,
+                            "incremental":  true,
+                            "isolatedModules":  true,
+                            "jsx":  "preserve",
+                            "plugins":  [
+                                            {
+                                                "name":  "next"
+                                            }
+                                        ]
+                        },
+    "include":  [
+                    "next-env.d.ts",
+                    "app/**/*.ts",
+                    "app/**/*.tsx",
+                    ".next/types/**/*.ts",
+                    "../../packages/shared/**/*.ts",
+                    "../../packages/shared/**/*.tsx",
+                    "../../services/**/*.ts",
+                    "../../services/**/*.tsx",
+                    "../../types/**/*.d.ts"
+                ],
+    "exclude":  [
+                    "node_modules"
+                ]
+}
