@@ -1,72 +1,81 @@
-﻿# ╨Я╨╡╤А╤Б╨╛╨╜╨░╨╗╤М╨╜╤Л╨╣ ╨░╨│╤А╨╡╨│╨░╤В╨╛╤А ╨╜╨╛╨▓╨╛╤Б╤В╨╡╨╣ тАФ Hack2025
+# Hack2025 News Aggregator
 
-╨н╤В╨╛╤В ╨┐╤А╨╛╨╡╨║╤В ╨┐╤А╨╡╨┤╤Б╤В╨░╨▓╨╗╤П╨╡╤В ╤Б╨╛╨▒╨╛╨╣ ╨╝╨╕╨╜╨╕╨╝╨░╨╗╤М╨╜╤Л╨╣ ╨┐╤А╨╛╤В╨╛╤В╨╕╨┐ ╨┐╨╡╤А╤Б╨╛╨╜╨░╨╗╤М╨╜╨╛╨│╨╛ ╨░╨│╤А╨╡╨│╨░╤В╨╛╤А╨░ ╨╜╨╛╨▓╨╛╤Б╤В╨╡╨╣,
-╨║╨╛╤В╨╛╤А╤Л╨╣ ╤Б╨╛╨▒╨╕╤А╨░╨╡╤В ╨┐╤Г╨▒╨╗╨╕╨║╨░╤Ж╨╕╨╕ ╨╕╨╖ RSSтАС╨╗╨╡╨╜╤В ╨╕ ╤Д╨╛╤А╨╝╨╕╤А╤Г╨╡╤В ╨║╤А╨░╤В╨║╨╕╨╡ ╤Б╨▓╨╛╨┤╨║╨╕ ╨║ ╨║╨░╨╢╨┤╨╛╨╝╤Г
-╨╕╨╜╤Д╨╛╨┐╨╛╨▓╨╛╨┤╤Г. ╨а╨╡╤И╨╡╨╜╨╕╨╡ ╤Б╨╛╨╛╤В╨▓╨╡╤В╤Б╤В╨▓╤Г╨╡╤В ╨┐╨╛╤Б╤В╨░╨╜╨╛╨▓╨║╨╡ ╨╖╨░╨┤╨░╤З╨╕ ╨╛╤В╨▒╨╛╤А╨╛╤З╨╜╨╛╨│╨╛ ╤Н╤В╨░╨┐╨░ Hack2025:
+A Next.js 14 monorepo that gathers news from a configurable list of RSS feeds, deduplicates stories, adds short summaries, and surfaces warnings for failing sources. The project is structured for collaborative development between local IDE work and cloud agents.
 
-- ╨Я╨╛╨╗╤М╨╖╨╛╨▓╨░╤В╨╡╨╗╤М ╨▓╨▓╨╛╨┤╨╕╤В ╤Б╨┐╨╕╤Б╨╛╨║ URLтАС╨░╨┤╤А╨╡╤Б╨╛╨▓ RSS (╨║╨░╨╢╨┤╤Л╨╣ ╤Б ╨╜╨╛╨▓╨╛╨╣ ╤Б╤В╤А╨╛╨║╨╕),
-  ╨╛╨┐╤Ж╨╕╨╛╨╜╨░╨╗╤М╨╜╨╛ ╤Г╨║╨░╨╖╤Л╨▓╨░╨╡╤В ╨║╨╗╤О╤З╨╡╨▓╤Л╨╡ ╤Б╨╗╨╛╨▓╨░.
-- ╨б╨╡╤А╨▓╨╡╤А╨╜╤Л╨╣ ╤Н╨╜╨┤╨┐╨╛╨╣╨╜╤В `/api/fetch` ╨╖╨░╨│╤А╤Г╨╢╨░╨╡╤В ╨╜╨╛╨▓╨╛╤Б╤В╨╕, ╤Д╨╕╨╗╤М╤В╤А╤Г╨╡╤В ╨╕╤Е ╨┐╨╛
-  ╨║╨╗╤О╤З╨╡╨▓╤Л╨╝ ╤Б╨╗╨╛╨▓╨░╨╝, ╤Г╨▒╨╕╤А╨░╨╡╤В ╨┐╨╛╨▓╤В╨╛╤А╤Л, ╨░ ╨╖╨░╤В╨╡╨╝ ╤Б╨╛╨╖╨┤╨░╤С╤В **╤Б╨▓╨╛╨┤╨║╤Г ╨╕╨╖ 2тАУ3 ╨┐╤А╨╡╨┤╨╗╨╛╨╢╨╡╨╜╨╕╨╣**
-  ╨┤╨╗╤П ╨║╨░╨╢╨┤╨╛╨╣ ╨┐╤Г╨▒╨╗╨╕╨║╨░╤Ж╨╕╨╕. ╨Х╤Б╨╗╨╕ ╨┐╨╡╤А╨╡╨╝╨╡╨╜╨╜╨░╤П ╨╛╨║╤А╤Г╨╢╨╡╨╜╨╕╤П `OPENAI_API_KEY` ╨╜╨╡
-  ╨╛╨┐╤А╨╡╨┤╨╡╨╗╨╡╨╜╨░, ╨╕╤Б╨┐╨╛╨╗╤М╨╖╤Г╨╡╤В╤Б╤П ╨┐╤А╨╛╤Б╤В╨░╤П ╤Н╨║╤Б╤В╤А╨░╨║╤В╨╕╨▓╨╜╨░╤П ╤Б╨▓╨╛╨┤╨║╨░ (╨┐╨╡╤А╨▓╤Л╨╡ ╨┐╤А╨╡╨┤╨╗╨╛╨╢╨╡╨╜╨╕╤П
-  ╨╕╤Б╤Е╨╛╨┤╨╜╨╛╨│╨╛ ╤В╨╡╨║╤Б╤В╨░), ╨╕╨╜╨░╤З╨╡ тАФ ╨▓╤Л╨╖╨╛╨▓ OpenAI API.
-- ╨Э╨░ ╤Б╤В╤А╨░╨╜╨╕╤Ж╨╡ ╨╛╤В╨╛╨▒╤А╨░╨╢╨░╨╡╤В╤Б╤П ╤Г╨┐╨╛╤А╤П╨┤╨╛╤З╨╡╨╜╨╜╤Л╨╣ ╤Б╨┐╨╕╤Б╨╛╨║ ╨║╨░╤А╤В╨╛╤З╨╡╨║: ╨╖╨░╨│╨╛╨╗╨╛╨▓╨╛╨║ ╤Б ╤Б╤Б╤Л╨╗╨║╨╛╨╣,
-  ╨╕╤Б╤В╨╛╤З╨╜╨╕╨║ ╨╕ ╨┤╨░╤В╨░, ╨║╤А╨░╤В╨║╨░╤П ╨░╨╜╨╜╨╛╤В╨░╤Ж╨╕╤П.
+## Features
+- **Multi-source feed ingestion** with normalization and deduplication logic shared across services.
+- **Keyword filtering** and automatic refresh interval in the web UI.
+- **Summary generation** via OpenAI with an in-memory cache and deterministic fallback summariser.
+- **Warning panel** that reports feeds that failed during the last refresh and highlights the total count.
+- **CI/CD pipeline** covering lint, test, build, guard workflows, and a Vercel deployment pipeline.
+- **Automated patch ingestion** script to convert `patch.diff` drops into PRs with optional auto-merge.
 
-## ╨С╤Л╤Б╤В╤А╤Л╨╣ ╨╖╨░╨┐╤Г╤Б╨║
-
-╨Я╤А╨╛╨╡╨║╤В ╨╕╤Б╨┐╨╛╨╗╤М╨╖╤Г╨╡╤В ╤А╨░╨▒╨╛╤З╨╕╨╡ ╨┐╤А╨╛╤Б╤В╤А╨░╨╜╤Б╤В╨▓╨░ pnpm ╨╕ Next.js 14 (App Router).
-
-```bash
-pnpm install        # ╤Г╤Б╤В╨░╨╜╨╛╨▓╨║╨░ ╨╖╨░╨▓╨╕╤Б╨╕╨╝╨╛╤Б╤В╨╡╨╣
-pnpm dev            # ╨╖╨░╨┐╤Г╤Б╨║ devтАС╤Б╨╡╤А╨▓╨╡╤А╨░ http://localhost:3000
+## Repository layout
+```
+apps/web              # Next.js application (App Router) and API routes
+packages/shared       # Reusable utilities, types, summariser, and unit tests
+services/api          # Feed ingestion helpers consumed by the Next API route
+scripts/ide_patch_ingest.ps1   # Task-scheduler friendly patch ingestion helper
+.github/workflows     # CI (lint/test/build), guard, and deploy pipelines
+docs/                 # Integration notes and auxiliary documentation
 ```
 
-### ╨Я╨╡╤А╨╡╨╝╨╡╨╜╨╜╤Л╨╡ ╨╛╨║╤А╤Г╨╢╨╡╨╜╨╕╤П
+## Getting started
+1. **Install prerequisites**
+   - Node.js 20+
+   - pnpm 10.18.0+
+2. **Install dependencies**
+   ```bash
+   pnpm install
+   ```
+3. **Configure environment variables**
+   - Copy `.env.example` to `.env.local` at the repository root or within `apps/web` depending on your preferred layout.
+   - Provide at minimum:
+     - `OPENAI_API_KEY` (optional; summaries fall back to extractive mode without it)
+     - `OPENAI_MODEL` (optional, defaults to `gpt-4o-mini`)
+     - `SUMMARY_CACHE_TTL_MS` to tune cache expiry (defaults to 30 minutes).
+4. **Run the development server**
+   ```bash
+   pnpm dev
+   ```
+   This launches the web app on `http://localhost:3000`.
 
-- `OPENAI_API_KEY` тАФ ╨║╨╗╤О╤З OpenAI ╨┤╨╗╤П ╨│╨╡╨╜╨╡╤А╨░╤Ж╨╕╨╕ ╨▒╨╛╨╗╨╡╨╡ ╤Б╨╛╨┤╨╡╤А╨╢╨░╤В╨╡╨╗╤М╨╜╤Л╤Е ╤Б╨▓╨╛╨┤╨╛╨║.
-  ╨Х╤Б╨╗╨╕ ╨╜╨╡ ╤Г╨║╨░╨╖╨░╨╜, ╨▒╤Г╨┤╨╡╤В ╨╕╤Б╨┐╨╛╨╗╤М╨╖╨╛╨▓╨░╨╜ ╤Н╨║╤Б╤В╤А╨░╨║╤В╨╕╨▓╨╜╤Л╨╣ ╤Д╨╛╨╗╨▒╤Н╨║.
+## Testing and quality checks
+- Run all tests: `pnpm test`
+- Watch tests during development: `pnpm test:watch`
+- Lint the Next.js app: `pnpm lint:web`
+- Workspace-wide lint (includes scripts and config files): `pnpm lint:workspace`
 
-## ╨б╤В╤А╤Г╨║╤В╤Г╤А╨░ ╨┐╤А╨╛╨╡╨║╤В╨░
+CI mirrors these commands in `.github/workflows/ci.yml`, ensuring parity between local and remote checks.
 
-```
-hack2025_news_aggregator/
-тФЬтФАтФА apps/
-тФВ   тФФтФАтФА web/                 # ╤Д╤А╨╛╨╜╤В╨╡╨╜╨┤ Next.js 14
-тФВ       тФЬтФАтФА app/
-тФВ       тФВ   тФЬтФАтФА api/
-тФВ       тФВ   тФВ   тФФтФАтФА fetch/route.ts   # APIтАС╨╝╨░╤А╤И╤А╤Г╤В ╨┤╨╗╤П ╨╖╨░╨│╤А╤Г╨╖╨║╨╕ ╨╕ ╤Б╤Г╨╝╨╝╨░╤А╨╕╨╖╨░╤Ж╨╕╨╕ ╨╜╨╛╨▓╨╛╤Б╤В╨╡╨╣
-тФВ       тФВ   тФЬтФАтФА lib/
-тФВ       тФВ   тФВ   тФФтФАтФА summarize.ts     # ╤Д╤Г╨╜╨║╤Ж╨╕╤П ╤Б╤Г╨╝╨╝╨░╤А╨╕╨╖╨░╤Ж╨╕╨╕ (OpenAI + ╤Д╨╛╨╗╨▒╤Н╨║)
-тФВ       тФВ   тФФтФАтФА page.tsx             # ╨│╨╗╨░╨▓╨╜╨░╤П ╤Б╤В╤А╨░╨╜╨╕╤Ж╨░ ╤Б ╤Д╨╛╤А╨╝╨╛╨╣ ╨╕ ╨▓╤Л╨▓╨╛╨┤╨╛╨╝ ╨╗╨╡╨╜╤В╤Л
-тФВ       тФЬтФАтФА next.config.js
-тФВ       тФЬтФАтФА package.json
-тФВ       тФЬтФАтФА tsconfig.json
-тФВ       тФЬтФАтФА .eslintrc.json
-тФВ       тФФтФАтФА next-env.d.ts
-тФЬтФАтФА package.json             # ╨║╨╛╤А╨╜╨╡╨▓╨╛╨╣ ╨╝╨░╨╜╨╕╤Д╨╡╤Б╤В ╨╕ ╤Б╨║╤А╨╕╨┐╤В╤Л ╨┤╨╗╤П ╨╝╨╛╨╜╨╛╤А╨╡╨┐╨╛╨╖╨╕╤В╨╛╤А╨╕╤П
-тФЬтФАтФА pnpm-workspace.yaml      # ╨╛╨┐╤А╨╡╨┤╨╡╨╗╤П╨╡╤В ╤А╨░╨▒╨╛╤З╨╕╨╡ ╨┐╤А╨╛╤Б╤В╤А╨░╨╜╤Б╤В╨▓╨░
-тФФтФАтФА README.md
-```
+## Deployment
+The repository ships with `.github/workflows/deploy.yml`, which promotes the `apps/web` build to Vercel whenever `main` changes. To activate it:
+1. Create a Vercel project pointing to the `apps/web` directory.
+2. Add the following GitHub secrets in the repository settings:
+   - `VERCEL_TOKEN`
+   - `VERCEL_ORG_ID`
+   - `VERCEL_PROJECT_ID`
+3. (Optional) Populate project-level environment variables (e.g. `OPENAI_API_KEY`) through Vercel or GitHub encrypted secrets.
 
-## ╨Ф╨╡╨┐╨╗╨╛╨╣
+Once configured, pushes to `main` and manual `workflow_dispatch` events will deploy automatically. The job pre-builds the app (`pnpm --filter web build`) before invoking `vercel/action@v3` for the production deploy.
 
-╨а╨╡╨┐╨╛╨╖╨╕╤В╨╛╤А╨╕╨╣ ╨│╨╛╤В╨╛╨▓ ╨║ ╨┤╨╡╨┐╨╗╨╛╤О ╨╜╨░ [Vercel](https://vercel.com/) ╨╕╨╗╨╕ ╨┤╤А╤Г╨│╨╛╨╣
-╤Б╨╡╤А╨▓╨╡╤А. ╨Ф╨╗╤П ╨┐╤А╨╛╨┤╨░╨║╤И╨╜тАС╨▓╨╡╤А╤Б╨╕╨╕ ╨┤╨╛╤Б╤В╨░╤В╨╛╤З╨╜╨╛ ╨╜╨░╤Б╤В╤А╨╛╨╕╤В╤М ╨┐╨╡╤А╨╡╨╝╨╡╨╜╨╜╤Л╨╡ ╨╛╨║╤А╤Г╨╢╨╡╨╜╨╕╤П ╨╕
-╨▓╤Л╨▒╤А╨░╤В╤М ╨║╨░╤В╨░╨╗╨╛╨│ `apps/web` ╨║╨░╨║ ╨╕╤Б╤Е╨╛╨┤╨╜╤Л╨╣ ╨┐╤А╨╛╨╡╨║╤В Next.js.
+## Automated IDE patch ingestion
+`scripts/ide_patch_ingest.ps1` converts periodic `patch.diff` drops into pull requests:
+1. Schedule the script with Windows Task Scheduler (recommended cadence: every 5 minutes).
+2. Ensure Git credentials and GitHub CLI (`gh`) are available on the host.
+3. Place a `patch.diff` file at the configured `PatchPath`; the script will:
+   - Create a topic branch off `dev`.
+   - Apply the patch (falling back to `--reject` on conflicts).
+   - Push the branch and create an auto-merge PR if GitHub CLI is present.
 
-## ╨Я╤А╨╛╨┤╨╛╨╗╨╢╨╡╨╜╨╕╨╡ ╤А╨░╨▒╨╛╤В
+## Branch policy & CI guardrails
+- `dev` and `main` are protected via required checks (install, lint, test, build) and conversation resolution.
+- `.github/workflows/guard-direct-push.yml` softly warns on direct pushes to protected branches.
+- `ci.yml` validates install, unit tests, app linting, and Next build for every pull request.
 
-╨Ф╨░╨╜╨╜╤Л╨╣ ╨┐╤А╨╛╤В╨╛╤В╨╕╨┐ тАФ ╤Б╤В╨░╤А╤В╨╛╨▓╨░╤П ╤В╨╛╤З╨║╨░. ╨з╤В╨╛╨▒╤Л ╨┐╤А╨╕╨▒╨╗╨╕╨╖╨╕╤В╤М ╨╡╨│╨╛ ╨║ ╨┐╨╛╨╗╨╜╨╛╤Ж╨╡╨╜╨╜╨╛╨╝╤Г
-╨░╨│╤А╨╡╨│╨░╤В╨╛╤А╤Г, ╨╝╨╛╨╢╨╜╨╛ ╨┤╨╛╨▒╨░╨▓╨╕╤В╤М:
+## Useful scripts
+- `pnpm --filter web lint` – Next.js lint with the app's configuration.
+- `pnpm --filter web build` – Production build for verification or Vercel prebuilds.
+- `pnpm --filter @hack2025/shared test` – Run only shared utility tests.
 
-- ╨е╤А╨░╨╜╨╡╨╜╨╕╨╡ ╨▓╤Л╨▒╤А╨░╨╜╨╜╤Л╤Е ╨╗╨╡╨╜╤В ╨╕ ╨╜╨░╤Б╤В╤А╨╛╨╡╨║ ╨┐╨╛╨╗╤М╨╖╨╛╨▓╨░╤В╨╡╨╗╤П (╨╜╨░╨┐╤А╨╕╨╝╨╡╤А, ╨▓ ╨▒╨░╨╖╨╡ ╨┤╨░╨╜╨╜╤Л╤Е
-  ╨╕╨╗╨╕ ╨╗╨╛╨║╨░╨╗╤М╨╜╨╛╨╝ ╤Е╤А╨░╨╜╨╕╨╗╨╕╤Й╨╡).
-- ╨Я╨╗╨░╨╜╨╕╤А╨╛╨▓╤Й╨╕╨║, ╨║╨╛╤В╨╛╤А╤Л╨╣ ╨▒╤Г╨┤╨╡╤В ╨╛╨▒╨╜╨╛╨▓╨╗╤П╤В╤М ╨║╤Н╤И ╨╜╨░ ╤Б╨╡╤А╨▓╨╡╤А╨╡ ╨╕ ╨╛╤В╨┤╨░╨▓╨░╤В╤М ╨╗╨╡╨╜╤В╤Г ╨▒╨╡╨╖
-  ╨╖╨░╨┤╨╡╤А╨╢╨╡╨║.
-- ╨Ш╨╜╤В╨╡╤А╤Д╨╡╨╣╤Б╤Л TelegramтАС╨▒╨╛╤В╨░ ╨╕╨╗╨╕ miniтАСapp ╨┤╨╗╤П ╨┐╨╛╨╗╤Г╤З╨╡╨╜╨╕╤П ╨╜╨╛╨▓╨╛╤Б╤В╨╡╨╣.
-- ╨Я╤А╨╛╨┤╨▓╨╕╨╜╤Г╤В╤Л╨╡ ╤Д╨╕╨╗╤М╤В╤А╤Л (╨┐╨╛ ╨┤╨░╤В╨╡, ╨┐╨╛ ╨╕╤Б╤В╨╛╤З╨╜╨╕╨║╤Г, ╨┐╨╛ ╨┤╨╗╨╕╨╜╨╡).
-- ╨Ъ╨╗╨░╤Б╤В╨╡╤А╨╕╨╖╨░╤Ж╨╕╤О ╨╛╨┤╨╕╨╜╨░╨║╨╛╨▓╤Л╤Е ╤В╨╡╨╝ ╨╕ ╨╛╨▒╤К╨╡╨┤╨╕╨╜╨╡╨╜╨╕╨╡ ╨┤╤Г╨▒╨╗╨╕╨║╨░╤В╨╛╨▓.
-
-╨Т╤Б╤С ╤Н╤В╨╛ ╨╝╨╛╨╢╨╡╤В ╨▒╤Л╤В╤М ╤А╨╡╨░╨╗╨╕╨╖╨╛╨▓╨░╨╜╨╛ ╨▓ ╤А╨░╨╝╨║╨░╤Е ╨▒╤Г╨┤╤Г╤Й╨╕╤Е ╨╕╤В╨╡╤А╨░╤Ж╨╕╨╣ ╨▓ ╨╛╤В╨┤╨╡╨╗╤М╨╜╤Л╤Е ╨▓╨╡╤В╨║╨░╤Е.
+For additional context on architectural decisions and follow-up ideas, see `docs/INTEGRATION_NOTES.md`.

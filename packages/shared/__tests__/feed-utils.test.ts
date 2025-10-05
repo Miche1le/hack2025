@@ -1,70 +1,90 @@
-﻿import test from "node:test";
-import assert from "node:assert/strict";
+import { describe, expect, it } from 'vitest';
 
-import { createDedupKey, dedupeItems, extractHostname, filterItemsByQuery } from "../feed-utils";
-import type { AggregatedItemInput } from "../types";
+import { dedupeItems, extractHostname, filterItemsByQuery } from '../feed-utils';
+import type { AggregatedItemInput } from '../types';
 
-test("extractHostname trims and lowercases input", () => {
-  const value = extractHostname("  HTTPS://Blog.EXAMPLE.com/post ");
-  assert.equal(value, "blog.example.com");
+describe('extractHostname', () => {
+  it('supports bare domains without protocol', () => {
+    expect(extractHostname('Example.com')).toBe('example.com');
+  });
+
+  it('trims spaces and normalises casing', () => {
+    expect(extractHostname('  HTTPS://Blog.EXAMPLE.com/post ')).toBe('blog.example.com');
+  });
+
+  it('returns empty string for invalid inputs', () => {
+    expect(extractHostname('not a url: example')).toBe('');
+    expect(extractHostname('')).toBe('');
+    expect(extractHostname(undefined)).toBe('');
+  });
 });
 
-test("extractHostname accepts bare domains", () => {
-  const value = extractHostname("Example.com");
-  assert.equal(value, "example.com");
-});
-
-test("extractHostname returns empty string for invalid input", () => {
-  assert.equal(extractHostname("not a url"), "");
-  assert.equal(extractHostname(""), "");
-  assert.equal(extractHostname(undefined), "");
-});
-
-test("createDedupKey falls back to link hostname when source missing", () => {
-  const key = createDedupKey("Sample", "", "https://example.com/article");
-  assert.equal(key, "sample::example.com");
-});
-
-test("dedupeItems removes duplicates regardless of source casing", () => {
+describe('dedupeItems', () => {
   const base: AggregatedItemInput = {
-    title: "OpenAI launches a new service",
-    link: "https://example.com/news/1",
-    source: "example.com",
-    contentSnippet: "The company introduced a new platform.",
-    content: "The company introduced a new platform.",
+    title: 'OpenAI launches a new service',
+    link: 'https://example.com/news/1',
+    source: 'example.com',
+    pubDate: '2024-05-01T00:00:00.000Z',
+    contentSnippet: 'The company introduced a new platform.',
+    content: 'The company introduced a new platform.',
   };
 
-  const duplicate = { ...base, source: "EXAMPLE.com", link: "https://example.com/news/1-copy" };
-  const items = dedupeItems([base, duplicate]);
+  it('removes duplicates when host and title match', () => {
+    const items = [
+      base,
+      {
+        ...base,
+        source: 'EXAMPLE.com',
+        link: 'https://example.com/news/1-copy',
+      },
+    ];
 
-  assert.equal(items.length, 1);
-  assert.equal(items[0].link, base.link);
+    const deduped = dedupeItems(items);
+    expect(deduped).toHaveLength(1);
+    expect(deduped[0].link).toBe(base.link);
+  });
+
+  it('keeps entries with the same title but different domains', () => {
+    const items = [
+      base,
+      {
+        ...base,
+        link: 'https://another.com/story/1',
+        source: 'another.com',
+      },
+    ];
+
+    const deduped = dedupeItems(items);
+    expect(deduped).toHaveLength(2);
+  });
+
+  it('uses link hostname when source is empty', () => {
+    const first: AggregatedItemInput = {
+      title: 'SpaceX schedules a launch',
+      link: 'https://spacex.com/launch',
+      source: '',
+    };
+    const second: AggregatedItemInput = {
+      title: 'spacex schedules a launch!!!',
+      link: 'https://spacex.com/launch?ref=dup',
+      source: '',
+    };
+
+    const deduped = dedupeItems([first, second]);
+    expect(deduped).toHaveLength(1);
+  });
 });
 
-test("dedupeItems uses link hostname when source is empty", () => {
-  const first: AggregatedItemInput = {
-    title: "SpaceX prepares for launch",
-    link: "https://spacex.com/launch",
-    source: "",
-  };
-  const second: AggregatedItemInput = {
-    title: "spacex prepares for launch!!!",
-    link: "https://spacex.com/launch?ref=dup",
-    source: "",
-  };
-
-  const items = dedupeItems([first, second]);
-  assert.equal(items.length, 1);
-});
-
-test("filterItemsByQuery keeps entries containing provided terms", () => {
+describe('filterItemsByQuery', () => {
   const entries: AggregatedItemInput[] = [
-    { title: "AI helps analyse data", source: "example.com", contentSnippet: "The algorithm saves time" },
-    { title: "European economy grows", source: "world.example", contentSnippet: "Markets show growth" },
+    { title: 'AI helps analyse data', link: 'https://example.com/ai', source: 'example.com', contentSnippet: 'The algorithm saves time' },
+    { title: 'European economy grows', link: 'https://world.example/eu', source: 'world.example', contentSnippet: 'Markets hold firm' },
   ];
 
-  const filtered = filterItemsByQuery(entries, ["Ai", "space"]);
-  assert.equal(filtered.length, 1);
-  assert.equal(filtered[0].title, entries[0].title);
-});
+  it('keeps entries containing provided terms', () => {
+    const filtered = filterItemsByQuery(entries, ['Ai', 'space']);
+    expect(filtered).toHaveLength(1);
+    expect(filtered[0].title).toBe(entries[0].title);
+  });
 
+});

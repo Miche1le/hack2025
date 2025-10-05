@@ -1,8 +1,9 @@
-﻿import { useMemo } from "react";
+import { useMemo } from "react";
 
 export interface Article {
-  title?: string;
-  link?: string;
+  id: string;
+  title: string;
+  link: string;
   pubDate?: string;
   source?: string;
   summary?: string;
@@ -12,10 +13,10 @@ interface ArticleCardProps {
   article: Article;
 }
 
-const FALLBACK_SUMMARY = "Сводка недоступна.";
-const FALLBACK_SOURCE = "Источник неизвестен";
-const FALLBACK_TITLE = "Без заголовка";
-const FALLBACK_DATE = "Дата неизвестна";
+const FALLBACK_SUMMARY = "Summary unavailable.";
+const FALLBACK_SOURCE = "Unknown source";
+const FALLBACK_TITLE = "Untitled article";
+const FALLBACK_DATE = "Date unavailable";
 
 function resolveDomain(link?: string, source?: string): string {
   const normalizedSource = source?.trim();
@@ -29,7 +30,7 @@ function resolveDomain(link?: string, source?: string): string {
 
   try {
     const url = new URL(link);
-    return url.hostname.replace(/^www\./, "");
+    return url.hostname.replace(/^www\\./, "");
   } catch {
     return "";
   }
@@ -45,21 +46,18 @@ function formatPublishedDate(value?: string): string {
     return FALLBACK_DATE;
   }
 
-  return parsed.toLocaleString("ru-RU", {
+  return parsed.toLocaleString("en-US", {
     dateStyle: "medium",
-    timeStyle: "short"
+    timeStyle: "short",
   });
 }
 
 export function ArticleCard({ article }: ArticleCardProps) {
   const domain = useMemo(
     () => resolveDomain(article.link, article.source),
-    [article.link, article.source]
+    [article.link, article.source],
   );
-  const published = useMemo(
-    () => formatPublishedDate(article.pubDate),
-    [article.pubDate]
-  );
+  const published = useMemo(() => formatPublishedDate(article.pubDate), [article.pubDate]);
   const title = article.title?.trim() || FALLBACK_TITLE;
   const summary = article.summary?.trim() || FALLBACK_SUMMARY;
   const hasLink = Boolean(article.link);
@@ -85,7 +83,7 @@ export function ArticleCard({ article }: ArticleCardProps) {
               display: "-webkit-box",
               WebkitBoxOrient: "vertical",
               WebkitLineClamp: 2,
-              overflow: "hidden"
+              overflow: "hidden",
             }}
           >
             {title}
@@ -104,7 +102,7 @@ export function ArticleCard({ article }: ArticleCardProps) {
           display: "-webkit-box",
           WebkitBoxOrient: "vertical",
           WebkitLineClamp: 4,
-          overflow: "hidden"
+          overflow: "hidden",
         }}
       >
         {summary}
@@ -116,7 +114,7 @@ export function ArticleCard({ article }: ArticleCardProps) {
           rel="noopener noreferrer"
           className="mt-4 inline-flex items-center text-sm font-semibold text-blue-600 underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
         >
-          Читать первоисточник
+          Read full article
         </a>
       ) : (
         <span className="mt-4 inline-block text-sm text-slate-500">{FALLBACK_SOURCE}</span>

@@ -9,12 +9,9 @@
     "./types": "./types.ts"
   },
   "scripts": {
-    "test": "tsx --test __tests__/feed-utils.test.ts"
+    "test": "vitest --run --config ../../vitest.config.ts packages/shared/__tests__/feed-utils.test.ts"
   },
   "dependencies": {
     "openai": "^4.104.0"
-  },
-  "devDependencies": {
-    "tsx": "^4.7.1"
   }
 }

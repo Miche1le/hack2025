@@ -4,16 +4,30 @@
   "private": true,
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/*",
+    "services/*"
   ],
   "scripts": {
     "dev": "pnpm --filter web dev",
     "build": "pnpm --filter web build",
     "start": "pnpm --filter web start",
-    "lint": "pnpm --filter web lint",
-    "test": "pnpm --filter @hack2025/shared test"
+    "lint": "pnpm lint:web",
+    "lint:web": "pnpm --filter web lint",
+    "lint:workspace": "pnpm exec eslint . --ext .ts,.tsx,.js,.cjs",
+    "test": "vitest --run",
+    "test:watch": "vitest",
+    "test:shared": "vitest --run packages/shared/__tests__/feed-utils.test.ts",
+    "test:web": "vitest --run apps/web/app/api/fetch/__tests__/route.test.ts"
   },
   "devDependencies": {
-    "typescript": "^5.2.2"
+    "@types/node": "^20.12.7",
+    "typescript": "^5.2.2",
+    "vitest": "^1.6.0",
+    "@vitest/coverage-v8": "^1.6.0",
+    "eslint": "^8.57.1",
+    "@typescript-eslint/parser": "^8.0.1",
+    "@typescript-eslint/eslint-plugin": "^8.0.1",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-config-prettier": "^9.1.0"
   }
 }
