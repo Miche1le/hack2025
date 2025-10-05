@@ -1,67 +1,87 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
-import Parser from 'rss-parser';
-import { summarize } from '@shared/summarize';
+import { NextRequest, NextResponse } from "next/server";
+import Parser from "rss-parser";
+
+import { dedupeItems, filterItemsByQuery } from "@shared/feed-utils";
+import { summarize } from "@shared/summarize";
+import type { AggregatedItemInput, FetchRequestBody } from "@shared/types";
 
 const parser: Parser = new Parser({
-  timeout: 10000
+  timeout: 10000,
 });
 
-/**
- * API endpoint to fetch and summarize articles from one or more RSS feeds. The
- * body of the POST request should be JSON with the following shape:
- * `{ feeds: string[], query?: string }` where `feeds` is an array of URLs
- * pointing to RSS feeds and `query` is an optional keyword used to filter
- * results by title or description. Duplicate articles (based on source and
- * title) are removed. Each article is summarized into three sentences by
- * default, using OpenAI when configured or a fallback summarizer otherwise.
- */
-export async function POST(req: NextRequest) {
-  try {
-    const { feeds, query } = await req.json();
-    if (!Array.isArray(feeds) || feeds.length === 0) {
-      return NextResponse.json({ error: 'feeds array is required' }, { status: 400 });
-    }
-    const articles: { title?: string; link?: string; contentSnippet?: string; pubDate?: string; source?: string }[] = [];
-    for (const url of feeds) {
-      try {
-        const feed = await parser.parseURL(url);
-        for (const item of feed.items) {
-          if (query) {
-            const text = (item.title || '') + ' ' + (item.contentSnippet || '') + ' ' + (item.content || '');
-            if (!text.toLowerCase().includes(query.toLowerCase())) continue;
-          }
-          articles.push({
-            title: item.title,
-            link: item.link,
-            contentSnippet: item.contentSnippet || item.content || '',
-            pubDate: item.pubDate,
-            source: feed.title
-          });
-        }
-      } catch (err) {
-        console.error(`Error parsing feed ${url}:`, err);
-      }
-    }
-    // Deduplicate articles by combining source and normalized title
-    const seen = new Set<string>();
-    const unique: typeof articles = [];
-    for (const a of articles) {
-      const key = `${a.source || ''}-${(a.title || '').toLowerCase().trim()}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        unique.push(a);
-      }
-    }
-    // Summarize articles concurrently
-    const summarized = await Promise.all(
-      unique.map(async (article) => {
-        const summary = await summarize(article.contentSnippet || '');
-        return { ...article, summary };
-      })
-    );
-    return NextResponse.json({ articles: summarized });
-  } catch (error) {
-    console.error('Unexpected error:', error);
-    return NextResponse.json({ error: 'Unexpected error' }, { status: 500 });
+type ParsedFeed = Parser.Output<Record<string, unknown>>;
+
+function parseBody(body: unknown): { feeds: string[]; queryTerms: string[] } {
+  const candidate = body as Partial<FetchRequestBody> | null | undefined;
+
+  if (!candidate || !Array.isArray(candidate.feeds)) {
+    throw new Error("`feeds` array is required");
   }
+
+  const feeds = candidate.feeds.map((feed) => String(feed).trim()).filter(Boolean);
+  if (feeds.length === 0) {
+    throw new Error("`feeds` array must not be empty");
+  }
+
+  const query = typeof candidate.query === "string" ? candidate.query : "";
+  const queryTerms = query
+    .split(",")
+    .map((term) => term.trim().toLowerCase())
+    .filter(Boolean);
+
+  return { feeds, queryTerms };
+}
+
+function toAggregatedItem(feed: ParsedFeed, item: ParsedFeed["items"][number]): AggregatedItemInput {
+  return {
+    title: item.title?.trim() || feed.title?.trim() || "Untitled item",
+    link: item.link || undefined,
+    source: feed.link || feed.feedUrl || feed.title || "",
+    pubDate: item.pubDate || undefined,
+    contentSnippet: item.contentSnippet || item.content || undefined,
+    content: item.content || undefined,
+  };
+}
+
+export async function POST(request: NextRequest) {
+  let feeds: string[] = [];
+  let queryTerms: string[] = [];
+
+  try {
+    const body = await request.json();
+    ({ feeds, queryTerms } = parseBody(body));
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error: error instanceof Error ? error.message : "Invalid request body",
+      },
+      { status: 400 },
+    );
+  }
+
+  const collected: AggregatedItemInput[] = [];
+
+  for (const url of feeds) {
+    try {
+      const feed = await parser.parseURL(url);
+      for (const item of feed.items) {
+        collected.push(toAggregatedItem(feed, item));
+      }
+    } catch (error) {
+      console.error(`Error parsing feed ${url}:`, error);
+    }
+  }
+
+  const filtered = filterItemsByQuery(collected, queryTerms);
+  const deduped = dedupeItems(filtered);
+
+  const summarized = await Promise.all(
+    deduped.map(async (article) => {
+      const baseText = article.content?.trim() || article.contentSnippet?.trim() || article.title;
+      const summary = await summarize(baseText, article.title);
+      return { ...article, summary };
+    }),
+  );
+
+  return NextResponse.json({ articles: summarized });
 }
