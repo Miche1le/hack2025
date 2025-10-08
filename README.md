@@ -1,200 +1,139 @@
-# 🚀 News Intelligence - AI-Powered News Aggregator
+# Hack2025 Frontend - News Aggregator
 
-Современный агрегатор новостей с локальной LLM суммаризацией в стиле Apple Intelligence.
+A modern Next.js 14 application for aggregating and summarizing news from RSS feeds with local AI-powered summarization.
 
-![News Intelligence](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.2-blue?style=for-the-badge&logo=typescript)
-![Ollama](https://img.shields.io/badge/Ollama-Local%20LLM-green?style=for-the-badge)
-![Docker](https://img.shields.io/badge/Docker-Ready-blue?style=for-the-badge&logo=docker)
+## Features
 
-## ✨ Особенности
+- **RSS Feed Aggregation**: Collect news from multiple RSS sources
+- **Local Summarization**: AI-powered article summarization with OpenAI integration and local fallback
+- **Smart Deduplication**: Remove duplicate articles across feeds
+- **Keyword Filtering**: Filter articles by keywords in title or content
+- **Real-time Updates**: Auto-refresh feeds at configurable intervals
+- **Responsive Design**: Modern UI built with Tailwind CSS
+- **Error Handling**: Graceful handling of failed feeds with warnings
 
-- 🤖 **Локальная LLM** суммаризация через Ollama (Mistral, Llama 2, Phi)
-- 🎨 **Apple Intelligence дизайн** с горизонтальной прокруткой
-- 🌙 **Темная/светлая тема** с плавными переходами
-- ⚡ **Быстрая фильтрация** и сортировка в реальном времени
-- 🔄 **Автообновление** RSS фидов
-- 📱 **Адаптивный дизайн** для всех устройств
-- 🐳 **Docker поддержка** для легкого развертывания
+## Tech Stack
 
-## 🚀 Быстрый старт
+- **Framework**: Next.js 14 with App Router
+- **Styling**: Tailwind CSS
+- **TypeScript**: Full type safety
+- **RSS Parsing**: rss-parser library
+- **AI Summarization**: OpenAI API with local fallback
+- **State Management**: React hooks and local state
 
-### 1. Установка Ollama (Windows)
+## Getting Started
 
-```bash
-# Скачайте установщик с https://ollama.ai/download
-# Или через PowerShell:
-Set-ExecutionPolicy Bypass -Scope Process -Force
-Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://ollama.ai/install.ps1'))
-```
+### Prerequisites
 
-### 2. Запуск Ollama
+- Node.js 20+
+- npm or yarn
 
-```bash
-# Запустите Ollama сервер
-ollama serve
+### Installation
 
-# В новом терминале загрузите модель
-ollama pull mistral:7b-instruct
-```
-
-### 3. Настройка проекта
-
-```bash
-# Клонируйте репозиторий
-git clone <repository-url>
-cd hack2025
-
-# Установите зависимости
-pnpm install
-
-# Создайте .env.local
-echo "LOCAL_SUMMARY_URL=http://localhost:11434/api/generate" > .env.local
-echo "OLLAMA_MODEL=mistral:7b-instruct" >> .env.local
-echo "USE_LOCAL_ONLY=true" >> .env.local
-
-# Запустите приложение
-pnpm dev
-```
-
-Откройте http://localhost:3000 🎉
-
-## 🐳 Docker развертывание
-
-```bash
-# Запуск всех сервисов
-docker-compose up -d
-
-# Загрузка модели
-docker exec news-summarizer-ollama ollama pull mistral:7b-instruct
-
-# Проверка статуса
-docker-compose ps
-```
-
-## 🎨 Дизайн Apple Intelligence
-
-- **Горизонтальная прокрутка** карточек новостей
-- **Увеличенные карточки** (384px) с градиентами
-- **Плавные анимации** и hover-эффекты
-- **Современная навигация** с backdrop-blur
-- **Минималистичный интерфейс** в стиле Apple
-
-## 🤖 Локальная LLM
-
-### Поддерживаемые модели
-
-| Модель | Размер | Скорость | Качество |
-|--------|--------|----------|----------|
-| `mistral:7b-instruct` | 7B | ⭐⭐⭐ | ⭐⭐⭐⭐ |
-| `llama2:7b-chat` | 7B | ⭐⭐⭐ | ⭐⭐⭐⭐ |
-| `phi:2.7b` | 2.7B | ⭐⭐⭐⭐ | ⭐⭐⭐ |
-| `codellama:7b-instruct` | 7B | ⭐⭐ | ⭐⭐⭐⭐⭐ |
-
-### Fallback стратегия
-
-1. **Локальная LLM** (если настроена)
-2. **OpenAI API** (если доступен ключ)
-3. **Экстрактивная суммаризация** (всегда работает)
-
-## ⚙️ Настройки
-
-В интерфейсе доступна панель настроек для:
-
-- 🔄 **Переключение режимов**: Local LLM ↔ OpenAI API
-- 🎛️ **Выбор модели**: Mistral, Llama 2, Code Llama, Phi
-- 📏 **Длина резюме**: 200-600 символов
-- 🎯 **Качество**: Низкое (быстро) ↔ Высокое (лучшее качество)
-
-## 📊 Производительность
-
-- **Локальная LLM**: 2-5 сек на статью
-- **OpenAI API**: 1-2 сек на статью
-- **Экстрактивная**: мгновенно
-- **Память**: 4-8 GB для Mistral 7B
-
-## 🛠️ Разработка
-
-```bash
-# Установка зависимостей
-pnpm install
-
-# Запуск в режиме разработки
-pnpm dev
-
-# Сборка
-pnpm build
-
-# Запуск продакшн
-pnpm start
-
-# Тесты
-pnpm test
-```
-
-## 📁 Структура проекта
-
-```
-hack2025/
-├── apps/web/                 # Next.js приложение
-│   ├── app/
-│   │   ├── api/             # API роуты
-│   │   ├── components/      # React компоненты
-│   │   └── page.tsx         # Главная страница
-├── packages/shared/         # Общие утилиты
-│   ├── summarize.ts         # Логика суммаризации
-│   ├── feed-utils.ts        # Обработка RSS
-│   └── types.ts            # TypeScript типы
-├── scripts/                # Скрипты автоматизации
-├── docker-compose.yml      # Docker конфигурация
-└── README.md              # Документация
-```
-
-## 🚀 Деплой
-
-### VPS с Docker
-
+1. Clone the repository:
 ```bash
 git clone <repository-url>
-cd hack2025
-docker-compose up -d
+cd hack2025-frontend
 ```
 
-### Vercel (только фронтенд)
-
+2. Install dependencies:
 ```bash
-vercel --prod
-# Ollama на отдельном сервере
+npm install
+# or
+yarn install
 ```
 
-## 📚 Документация
+3. Set up environment variables:
+```bash
+cp .env.example .env.local
+```
 
-- [QUICK_START.md](QUICK_START.md) - Быстрый старт
-- [LOCAL_LLM_SETUP.md](LOCAL_LLM_SETUP.md) - Настройка локальной LLM
-- [OLLAMA_WINDOWS_SETUP.md](OLLAMA_WINDOWS_SETUP.md) - Установка Ollama на Windows
-- [ARCHITECTURE.md](ARCHITECTURE.md) - Архитектура системы
+Edit `.env.local` and add your OpenAI API key (optional):
+```
+OPENAI_API_KEY=your_openai_api_key_here
+OPENAI_MODEL=gpt-4o-mini
+SUMMARY_CACHE_TTL_MS=1800000
+```
 
-## 🤝 Вклад в проект
+4. Run the development server:
+```bash
+npm run dev
+# or
+yarn dev
+```
 
-1. Fork репозитория
-2. Создайте feature branch
-3. Commit изменения
-4. Push в branch
-5. Создайте Pull Request
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## 📄 Лицензия
+## Usage
 
-MIT License - см. [LICENSE](LICENSE)
+1. **Add RSS Feeds**: Paste RSS feed URLs in the textarea (one per line)
+2. **Set Keywords**: Add comma-separated keywords to filter articles
+3. **Configure Refresh**: Set auto-refresh interval in minutes
+4. **View Articles**: Browse summarized articles with source attribution
 
-## 🆘 Поддержка
+## Local Summarization
 
-При возникновении проблем:
+The app includes a sophisticated local summarization system:
 
-1. Проверьте, что Ollama запущен: `curl http://localhost:11434/api/tags`
-2. Убедитесь в правильности переменных окружения
-3. Проверьте логи: `docker-compose logs`
-4. Перезапустите сервисы: `docker-compose restart`
+- **OpenAI Integration**: Uses GPT-4o-mini for high-quality summaries
+- **Local Fallback**: Extractive summarization when API is unavailable
+- **Caching**: In-memory cache to reduce API calls
+- **Configurable**: Adjustable cache TTL and character limits
 
----
+## Project Structure
 
-**News Intelligence** - современный способ оставаться в курсе событий с помощью ИИ! 🚀
+```
+src/
+├── app/                 # Next.js App Router pages
+├── components/          # React components
+├── lib/                 # Utility functions and services
+│   ├── summarizer.ts    # AI summarization logic
+│   ├── feed-utils.ts    # Feed processing utilities
+│   └── rss-parser.ts    # RSS parsing service
+└── types/               # TypeScript type definitions
+```
+
+## Development
+
+### Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
+- `npm run lint:fix` - Fix ESLint issues
+- `npm run type-check` - Run TypeScript type checking
+
+### Code Quality
+
+- ESLint configuration for code quality
+- TypeScript for type safety
+- Prettier for code formatting
+- Tailwind CSS for consistent styling
+
+## Deployment
+
+The application is ready for deployment on:
+
+- **Vercel** (recommended for Next.js)
+- **Netlify**
+- **Railway**
+- **Docker** containers
+
+### Vercel Deployment
+
+1. Connect your GitHub repository to Vercel
+2. Set environment variables in Vercel dashboard
+3. Deploy automatically on push to main branch
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License.
