@@ -2,23 +2,13 @@
 
 import type { FormEvent } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-
-import { ArticleCard, type Article } from "./components/article-card";
-
-interface FetchResponseItem {
-  id: string;
-  title: string;
-  link: string;
-  source: string;
-  published: string;
-  summary: string;
-}
-
-interface FetchResponse {
-  items?: FetchResponseItem[];
-  warnings?: string[];
-  error?: string;
-}
+import { HorizontalFeed } from "./components/horizontal-feed";
+import { FilterControls, type SortOption } from "./components/filter-controls";
+import { ThemeToggle } from "./components/theme-toggle";
+import type { Article, FetchResponse } from "@shared/types";
+import { dedupeItems, filterItemsByQuery } from "@shared/feed-utils";
+import { loadFeed } from "@services/api/rss";
+import { summarize } from "@shared/summarize";
 
 const DEFAULT_FEED = "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml";
 const EMPTY_FEED_ERROR = "Add at least one RSS feed URL.";
@@ -41,6 +31,7 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
   const [hasFetched, setHasFetched] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [sortBy, setSortBy] = useState<SortOption>('newest');
 
   const lastUpdatedLabel = useMemo(
     () => (lastUpdated ? lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : null),
@@ -62,6 +53,50 @@ export default function HomePage() {
   const abortRef = useRef<AbortController | null>(null);
   const lastRequestRef = useRef<{ feeds: string[]; query: string } | null>(null);
   const didInitialFetchRef = useRef(false);
+
+  // Client-side filtering and sorting
+  const filteredAndSortedArticles = useMemo(() => {
+    let filtered = articles;
+
+    // Apply client-side filtering
+    if (query.trim()) {
+      const queryTerms = query.trim().toLowerCase().split(/[\s,]+/).filter(Boolean);
+      filtered = filterItemsByQuery(articles, queryTerms);
+    }
+
+    // Apply sorting
+    const sorted = [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case 'newest':
+          const timeA = a.pubDate ? Date.parse(a.pubDate) : 0;
+          const timeB = b.pubDate ? Date.parse(b.pubDate) : 0;
+          return timeB - timeA;
+        
+        case 'source':
+          return (a.source || '').localeCompare(b.source || '');
+        
+        case 'relevance':
+          if (!query.trim()) return 0;
+          const queryTerms = query.trim().toLowerCase().split(/[\s,]+/).filter(Boolean);
+          const scoreA = queryTerms.reduce((score, term) => {
+            const titleMatches = (a.title || '').toLowerCase().includes(term) ? 2 : 0;
+            const summaryMatches = (a.summary || '').toLowerCase().includes(term) ? 1 : 0;
+            return score + titleMatches + summaryMatches;
+          }, 0);
+          const scoreB = queryTerms.reduce((score, term) => {
+            const titleMatches = (b.title || '').toLowerCase().includes(term) ? 2 : 0;
+            const summaryMatches = (b.summary || '').toLowerCase().includes(term) ? 1 : 0;
+            return score + titleMatches + summaryMatches;
+          }, 0);
+          return scoreB - scoreA;
+        
+        default:
+          return 0;
+      }
+    });
+
+    return sorted;
+  }, [articles, query, sortBy]);
 
   const performFetch = useCallback(
     async (feeds: string[], currentQuery: string, reason: "manual" | "auto" | "initial") => {
@@ -87,47 +122,75 @@ export default function HomePage() {
       setLoading(true);
 
       try {
-        const response = await fetch("/api/fetch", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ feeds, query: currentQuery, interval: sanitizedInterval }),
-          signal: controller.signal,
+        // Локальная обработка фидов
+        const feedResults = await Promise.allSettled(
+          feeds.map((feedUrl) => loadFeed(feedUrl))
+        );
+
+        const collectedItems: any[] = [];
+        const failures: string[] = [];
+
+        feedResults.forEach((result, index) => {
+          if (result.status === 'fulfilled') {
+            collectedItems.push(...result.value);
+          } else {
+            const reason = result.reason instanceof Error ? result.reason.message : String(result.reason);
+            failures.push(feeds[index] + ': ' + reason);
+          }
         });
 
-        if (!response.ok) {
-          let message = GENERIC_FETCH_ERROR;
-          try {
-            const errorPayload = await response.json();
-            if (errorPayload && typeof errorPayload.error === "string" && errorPayload.error.trim()) {
-              message = errorPayload.error.trim();
-            }
-          } catch {
-            const fallbackText = (await response.text()).trim();
-            if (fallbackText) {
-              message = fallbackText;
-            }
-          }
-          throw new Error(message);
+        if (collectedItems.length === 0) {
+          setError('No stories could be retrieved. Check the feed URLs and try again.');
+          setWarnings(failures);
+          setArticles([]);
+          setLastUpdated(null);
+          return;
         }
 
-        const data: FetchResponse = await response.json();
-        const items = Array.isArray(data.items) ? data.items : [];
-        const nextArticles: Article[] = items.map((item) => ({
-          id: item.id,
-          title: item.title,
-          link: item.link,
-          source: item.source,
-          pubDate: item.published,
-          summary: item.summary,
-        }));
+        // Фильтрация и дедупликация
+        const queryTerms = currentQuery
+          .split(/[\n,]/)
+          .map((term) => term.trim().toLowerCase())
+          .filter(Boolean);
 
-        const normalizedWarnings = Array.isArray(data.warnings)
-          ? Array.from(new Set(data.warnings.map((warning) => warning.trim()).filter(Boolean)))
-          : [];
+        const filtered = filterItemsByQuery(collectedItems, queryTerms);
+        const uniqueItems = dedupeItems(filtered);
 
-        setArticles(nextArticles);
-        setWarnings(normalizedWarnings);
-        setError(data.error ?? null);
+        // Сортировка по дате публикации
+        const orderedItems = [...uniqueItems].sort((a, b) => {
+          const timeA = a.pubDate ? Date.parse(a.pubDate) : 0;
+          const timeB = b.pubDate ? Date.parse(b.pubDate) : 0;
+          return timeB - timeA;
+        });
+
+        // Генерация резюме
+        const summarized = await Promise.all(
+          orderedItems.map(async (item) => {
+            const baseText = (item.content?.trim() || item.contentSnippet || item.title || '').trim();
+            const safeBase = baseText.length > 0 ? baseText : 'No summary available.';
+            let summary = safeBase;
+
+            try {
+              const generated = await summarize(safeBase, item.title);
+              summary = generated && generated.trim().length > 0 ? generated.trim() : safeBase;
+            } catch (error) {
+              console.warn('Failed to summarize feed item', { link: item.link, error });
+            }
+
+            return {
+              id: `${item.title}::${item.source}::${item.link}`,
+              title: item.title,
+              link: item.link,
+              source: item.source,
+              pubDate: item.pubDate,
+              summary,
+            } as Article;
+          })
+        );
+
+        setArticles(summarized);
+        setWarnings(failures);
+        setError(null);
         setLastUpdated(new Date());
       } catch (fetchError) {
         if (fetchError instanceof DOMException && fetchError.name === "AbortError") {
@@ -143,7 +206,7 @@ export default function HomePage() {
         setHasFetched(true);
       }
     },
-    [sanitizedInterval],
+    [],
   );
 
   const handleSubmit = useCallback(
@@ -192,133 +255,113 @@ export default function HomePage() {
     };
   }, [hasFetched, sanitizedInterval, performFetch]);
 
-  const showEmptyState = hasFetched && !loading && !error && articles.length === 0;
+  const handleRefresh = useCallback(() => {
+    const snapshot = lastRequestRef.current;
+    if (snapshot) {
+      void performFetch(snapshot.feeds, snapshot.query, "manual");
+    }
+  }, [performFetch]);
 
   return (
-    <main className="mx-auto max-w-4xl space-y-8 px-4 py-6">
-      <header>
-        <h1 className="text-3xl font-bold text-slate-900">News briefing dashboard</h1>
-        <p className="mt-2 text-sm text-slate-600">
-          Gather the feeds you care about in one place: paste RSS URLs, add keywords, and skim the summaries.
-        </p>
-      </header>
-
-      <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-        <div className="space-y-2">
-          <label htmlFor="feeds" className="block text-sm font-semibold text-slate-800">
-            RSS feeds (one per line)
-          </label>
-          <p className="text-xs text-slate-500">Paste up to {MAX_FEEDS} feed URLs. Each line should contain a single address.</p>
-          <textarea
-            id="feeds"
-            name="feeds"
-            value={feedsInput}
-            onChange={(event) => setFeedsInput(event.target.value)}
-            rows={5}
-            spellCheck={false}
-            className="w-full rounded-md border border-slate-300 bg-white p-3 text-sm text-slate-900 shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
-            placeholder="https://example.com/feed.xml"
-          />
-        </div>
-
-        <div className="flex flex-col gap-4 md:flex-row">
-          <div className="flex-1 space-y-2">
-            <label htmlFor="query" className="block text-sm font-semibold text-slate-800">
-              Keywords
-            </label>
-            <input
-              id="query"
-              name="query"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="ai, space, economy"
-              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
-              autoComplete="off"
-            />
-            <p className="text-xs text-slate-500">Only stories containing these words in the title or summary are kept.</p>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+      <main className="mx-auto max-w-7xl px-4 py-8">
+        {/* Header */}
+        <header className="mb-12">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-3 tracking-tight">
+                News Intelligence
+              </h1>
+              <p className="text-xl text-gray-600 dark:text-gray-400 font-light">
+                Effortlessly helpful every day. Stay informed with AI-powered news summaries.
+              </p>
+            </div>
+            <ThemeToggle />
           </div>
 
-          <div className="w-full max-w-[140px] space-y-2">
-            <label htmlFor="interval" className="block text-sm font-semibold text-slate-800">
-              Refresh interval (min)
-            </label>
-            <input
-              id="interval"
-              name="interval"
-              type="number"
-              min={1}
-              step={1}
-              inputMode="numeric"
-              value={intervalInput}
-              onChange={(event) => setIntervalInput(event.target.value)}
-              onBlur={() => setIntervalInput(String(sanitizedInterval))}
-              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
-              aria-describedby="interval-help"
-            />
-            <p id="interval-help" className="text-xs text-slate-500">
-              Auto refresh every {sanitizedInterval} minute(s).
+          {/* RSS Feeds Input */}
+          <form onSubmit={handleSubmit} className="mb-8">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-700">
+              <div className="space-y-6">
+                <div>
+                  <label htmlFor="feeds" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                    RSS Feeds (one per line)
+                  </label>
+                  <textarea
+                    id="feeds"
+                    name="feeds"
+                    value={feedsInput}
+                    onChange={(event) => setFeedsInput(event.target.value)}
+                    rows={4}
+                    spellCheck={false}
+                    className="w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 p-4 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all duration-200"
+                    placeholder="https://example.com/feed.xml"
+                  />
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                    Paste up to {MAX_FEEDS} feed URLs. Each line should contain a single address.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </form>
+        </header>
+
+        {/* Filter Controls */}
+        <FilterControls
+          onFilterChange={setQuery}
+          onSortChange={setSortBy}
+          onRefreshIntervalChange={setIntervalInput}
+          currentQuery={query}
+          currentSort={sortBy}
+          currentInterval={sanitizedInterval}
+          loading={loading}
+          onRefresh={handleRefresh}
+        />
+
+        {/* Status Messages */}
+        {error && (
+          <div className="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
+            <div className="flex">
+              <svg className="w-5 h-5 text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+            </div>
+          </div>
+        )}
+
+        {warnings.length > 0 && (
+          <div className="mb-6 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
+            <div className="flex">
+              <svg className="w-5 h-5 text-amber-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <div>
+                <h3 className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                  {warningsLabel ?? "Feed load warnings:"}
+                </h3>
+                <ul className="mt-2 text-sm text-amber-700 dark:text-amber-300 list-disc list-inside">
+                  {warnings.map((warning) => (
+                    <li key={warning}>{warning}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Last Updated */}
+        {lastUpdatedLabel && (
+          <div className="mb-6 text-center">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Last updated at {lastUpdatedLabel}
             </p>
           </div>
-        </div>
+        )}
 
-        <div className="flex flex-col items-start gap-2">
-          <button
-            type="submit"
-            className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:bg-blue-400"
-            disabled={loading}
-          >
-            {loading ? "Refreshing..." : "Refresh"}
-          </button>
-          <p className="text-xs text-slate-500">
-            Auto refresh every {sanitizedInterval} minute(s)
-          {lastUpdatedLabel ? ` - Last refreshed at ${lastUpdatedLabel}` : ""}
-          </p>
-        </div>
-      </form>
-
-      <section className="space-y-4" aria-live="polite" aria-busy={loading}>
-        {error ? (
-          <div
-            role="alert"
-            className="rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"
-          >
-            {error}
-          </div>
-        ) : null}
-
-        {warnings.length > 0 ? (
-          <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            <strong className="block font-semibold">{warningsLabel ?? "Feed load warnings:"}</strong>
-            <ul className="mt-2 list-disc space-y-1 pl-4">
-              {warnings.map((warning) => (
-                <li key={warning}>{warning}</li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-
-        {loading ? (
-          <p className="text-sm text-slate-600" role="status">
-            Refreshing feeds...
-          </p>
-        ) : null}
-
-        {showEmptyState ? (
-          <p className="text-sm text-slate-600">
-            No stories yet. Try adding more feeds or adjust the keyword list.
-          </p>
-        ) : null}
-
-        {articles.length > 0 ? (
-          <ul className="space-y-4">
-            {articles.map((article) => (
-              <li key={article.id}>
-                <ArticleCard article={article} />
-              </li>
-            ))}
-          </ul>
-        ) : null}
-      </section>
-    </main>
+        {/* Horizontal Feed */}
+        <HorizontalFeed articles={filteredAndSortedArticles} loading={loading} />
+      </main>
+    </div>
   );
 }

@@ -1,6 +1,7 @@
 ﻿import Parser from 'rss-parser';
 
 import { extractHostname } from '@shared/feed-utils';
+import { extractCleanContent } from '@shared/html-cleaner';
 import type { AggregatedItemInput } from '@shared/types';
 
 const MAX_ITEMS_PER_FEED = 20;
@@ -51,10 +52,7 @@ function selectPublishedDate(item: RSSItem): string {
 }
 
 function collectContent(item: RSSItem): { snippet: string; content?: string } {
-  const snippetSource = item.contentSnippet || item.summary || item.content || '';
-  const snippet = snippetSource.replace(/\s+/g, ' ').trim();
-  const content = item.content?.trim();
-  return { snippet, content: content && content.length > 0 ? content : undefined };
+  return extractCleanContent(item);
 }
 
 async function fetchWithTimeout(url: string): Promise<string> {

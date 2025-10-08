@@ -18,6 +18,8 @@
                                       },
                             "types":  [
                                           "node",
+                                          "react",
+                                          "react-dom",
                                           "next",
                                           "next/types/global",
                                           "next/navigation"

@@ -6,7 +6,8 @@
   "exports": {
     "./summarize": "./summarize.ts",
     "./feed-utils": "./feed-utils.ts",
-    "./types": "./types.ts"
+    "./types": "./types.ts",
+    "./html-cleaner": "./html-cleaner.ts"
   },
   "scripts": {
     "test": "vitest --run --config ../../vitest.config.ts packages/shared/__tests__/feed-utils.test.ts"

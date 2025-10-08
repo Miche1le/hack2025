@@ -61,7 +61,7 @@ function parseRequestBody(body: unknown): ParsedRequest {
 }
 
 async function summarizeItems(items: NormalizedFeedItem[]): Promise<(AggregatedItemInput & { summary: string })[]> {
-  return Promise.all(
+  const results = await Promise.allSettled(
     items.map(async (item) => {
       const baseText = (item.content?.trim() || item.contentSnippet || item.title || '').trim();
       const safeBase = baseText.length > 0 ? baseText : 'No summary available.';
@@ -71,7 +71,13 @@ async function summarizeItems(items: NormalizedFeedItem[]): Promise<(AggregatedI
         const generated = await summarize(safeBase, item.title);
         summary = generated && generated.trim().length > 0 ? generated.trim() : safeBase;
       } catch (error) {
-        console.warn('Failed to summarize feed item', { link: item.link, error });
+        console.warn('Failed to summarize feed item', { 
+          link: item.link, 
+          title: item.title,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+        // Используем fallback суммаризацию
+        summary = safeBase;
       }
 
       return {
@@ -85,6 +91,26 @@ async function summarizeItems(items: NormalizedFeedItem[]): Promise<(AggregatedI
       } satisfies AggregatedItemInput & { summary: string };
     }),
   );
+
+  // Обрабатываем результаты, включая отклоненные промисы
+  return results.map((result, index) => {
+    if (result.status === 'fulfilled') {
+      return result.value;
+    } else {
+      // Fallback для неудачных суммаризаций
+      const item = items[index];
+      const baseText = (item.content?.trim() || item.contentSnippet || item.title || '').trim();
+      return {
+        title: item.title,
+        link: item.link,
+        source: item.source,
+        pubDate: item.pubDate,
+        contentSnippet: item.contentSnippet,
+        content: item.content,
+        summary: baseText.length > 0 ? baseText : 'No summary available.',
+      } satisfies AggregatedItemInput & { summary: string };
+    }
+  });
 }
 
 function sortByPublished(items: NormalizedFeedItem[]): NormalizedFeedItem[] {

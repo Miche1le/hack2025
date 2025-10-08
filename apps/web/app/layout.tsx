@@ -9,8 +9,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: PropsWithChildren) {
   return (
-    <html lang="en">
-      <body className="bg-slate-50 text-slate-900">{children}</body>
+    <html lang="en" className="scroll-smooth">
+      <body className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white transition-colors">
+        {children}
+      </body>
     </html>
   );
 }
