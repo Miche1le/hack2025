@@ -3,9 +3,40 @@ export interface Article {
   title: string;
   link: string;
   pubDate?: string;
-  source?: string;
+  source: string;
   summary?: string;
+  feedUrl?: string;
+  contentSnippet?: string;
+  content?: string;
 }
+
+export interface FeedMetadata {
+  hubUrls: string[];
+  selfUrl?: string;
+  topicUrl?: string;
+}
+
+export interface JsonFeedItem {
+  id: string;
+  url: string;
+  title: string;
+  summary?: string;
+  content_html?: string;
+  date_published?: string;
+  external_url?: string;
+  authors?: Array<{ name: string }>;
+  tags?: string[];
+}
+
+export interface JsonFeedResponse {
+  version: string;
+  title: string;
+  home_page_url?: string;
+  feed_url: string;
+  description?: string;
+  items: JsonFeedItem[];
+}
+
 
 export interface FetchResponseItem {
   id: string;
@@ -33,4 +64,5 @@ export interface SummarizerConfig {
   model?: string;
   cacheTtlMs?: number;
   fallbackCharLimit?: number;
+  baseUrl?: string;
 }

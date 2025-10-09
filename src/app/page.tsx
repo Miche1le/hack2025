@@ -3,7 +3,7 @@
 import type { FormEvent } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArticleCard } from "@/components/ArticleCard";
-import type { Article, FetchResponse } from "@/types";
+import type { Article } from "@/types";
 import { dedupeItems, filterItemsByQuery } from "@/lib/feed-utils";
 import { loadFeed } from "@/lib/rss-parser";
 import summarizer from "@/lib/summarizer";
@@ -75,39 +75,48 @@ export default function HomePage() {
       setLoading(true);
 
       try {
-        // Локальная обработка фидов
-        const feedResults = await Promise.allSettled(
-          feeds.map((feedUrl) => loadFeed(feedUrl))
-        );
+        const feedResults = await Promise.allSettled(feeds.map((feedUrl) => loadFeed(feedUrl)));
 
-        const collectedItems: any[] = [];
+        const collectedItems: Article[] = [];
         const failures: string[] = [];
 
         feedResults.forEach((result, index) => {
-          if (result.status === 'fulfilled') {
-            collectedItems.push(...result.value);
+          if (result.status === "fulfilled") {
+            const items = result.value;
+            collectedItems.push(
+              ...items.map((item) => ({
+                id: `${item.title}::${item.source}::${item.link}`,
+                title: item.title,
+                link: item.link,
+                source: item.source ?? "unknown",
+                pubDate: item.pubDate,
+                summary: item.contentSnippet ?? item.content ?? item.title,
+                contentSnippet: item.contentSnippet,
+                content: item.content,
+                feedUrl: item.feedUrl,
+              })),
+            );
           } else {
             const reason = result.reason instanceof Error ? result.reason.message : String(result.reason);
-            failures.push(feeds[index] + ': ' + reason);
+            failures.push(`${feeds[index]}: ${reason}`);
           }
         });
 
         if (collectedItems.length === 0) {
-          setError('No stories could be retrieved. Check the feed URLs and try again.');
+          setError("No stories could be retrieved. Check the feed URLs and try again.");
           setWarnings(failures);
           setArticles([]);
           setLastUpdated(null);
           return;
         }
 
-        // Фильтрация и дедупликация
         const queryTerms = currentQuery
           .split(/[\n,]/)
           .map((term) => term.trim().toLowerCase())
           .filter(Boolean);
 
         const filtered = filterItemsByQuery(collectedItems, queryTerms);
-        const uniqueItems = dedupeItems(filtered);
+        const uniqueItems = dedupeItems<Article>(filtered);
 
         // Сортировка по дате публикации
         const orderedItems = [...uniqueItems].sort((a, b) => {
@@ -116,29 +125,31 @@ export default function HomePage() {
           return timeB - timeA;
         });
 
-        // Генерация резюме
         const summarized = await Promise.all(
           orderedItems.map(async (item) => {
-            const baseText = (item.content?.trim() || item.contentSnippet || item.title || '').trim();
-            const safeBase = baseText.length > 0 ? baseText : 'No summary available.';
+            const baseText = (item.content?.trim() || item.summary?.trim() || item.contentSnippet || item.title || "").trim();
+            const safeBase = baseText.length > 0 ? baseText : "No summary available.";
             let summary = safeBase;
 
             try {
               const generated = await summarizer.summarize(safeBase, item.title);
               summary = generated && generated.trim().length > 0 ? generated.trim() : safeBase;
             } catch (error) {
-              console.warn('Failed to summarize feed item', { link: item.link, error });
+              console.warn("Failed to summarize feed item", { link: item.link, error });
             }
 
             return {
-              id: `${item.title}::${item.source}::${item.link}`,
+              id: item.id,
               title: item.title,
               link: item.link,
               source: item.source,
               pubDate: item.pubDate,
               summary,
-            } as Article;
-          })
+              contentSnippet: item.contentSnippet,
+              content: item.content,
+              feedUrl: item.feedUrl,
+            } satisfies Article;
+          }),
         );
 
         setArticles(summarized);
@@ -211,10 +222,10 @@ export default function HomePage() {
   const showEmptyState = hasFetched && !loading && !error && articles.length === 0;
 
   return (
-    <main className="mx-auto max-w-4xl space-y-8 px-4 py-6">
-      <header>
-        <h1 className="text-3xl font-bold text-slate-900">News briefing dashboard</h1>
-        <p className="mt-2 text-sm text-slate-600">
+    <main className="mx-auto flex h-screen max-w-4xl flex-col gap-8 px-4 py-6 h-feed">
+      <header className="h-feed__header">
+        <h1 className="text-3xl font-bold text-slate-900 p-name">News briefing dashboard</h1>
+        <p className="mt-2 text-sm text-slate-600 p-summary">
           Gather the feeds you care about in one place: paste RSS URLs, add keywords, and skim the summaries.
         </p>
       </header>
@@ -292,7 +303,8 @@ export default function HomePage() {
         </div>
       </form>
 
-      <section className="space-y-4" aria-live="polite" aria-busy={loading}>
+      <section className="flex-1 overflow-hidden">
+        <div className="flex h-full flex-col space-y-4" aria-live="polite" aria-busy={loading}>
         {error ? (
           <div
             role="alert"
@@ -326,14 +338,17 @@ export default function HomePage() {
         ) : null}
 
         {articles.length > 0 ? (
-          <ul className="space-y-4">
-            {articles.map((article) => (
-              <li key={article.id}>
-                <ArticleCard article={article} />
-              </li>
-            ))}
-          </ul>
+          <div className="flex-1 overflow-y-auto pr-2">
+            <ul className="space-y-4 h-feed__items">
+              {articles.map((article) => (
+                <li key={article.id}>
+                  <ArticleCard article={article} />
+                </li>
+              ))}
+            </ul>
+          </div>
         ) : null}
+        </div>
       </section>
     </main>
   );

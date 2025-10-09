@@ -20,7 +20,7 @@ export function extractHostname(url?: string): string {
 export function normalizeTitle(title: string): string {
   return title
     .toLowerCase()
-    .replace(/[\p{P}\p{S}]+/gu, " ")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -48,7 +48,9 @@ export function dedupeItems<T extends { title: string; source: string; link?: st
   return unique;
 }
 
-export function filterItemsByQuery<T extends { title: string; contentSnippet?: string; content?: string }>(
+export function filterItemsByQuery<
+  T extends { title: string; contentSnippet?: string; content?: string }
+>(
   items: T[], 
   queryTerms: string[]
 ): T[] {
@@ -65,7 +67,7 @@ export function filterItemsByQuery<T extends { title: string; contentSnippet?: s
   }
 
   return items.filter((item) => {
-    const haystack = [item.title, item.contentSnippet, item.content]
+    const haystack = [item.title, item.content, item.contentSnippet]
       .map((segment) => segment?.toLowerCase() ?? "")
       .join(" ");
 

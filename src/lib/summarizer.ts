@@ -3,6 +3,7 @@ import type { SummarizerConfig } from "@/types";
 
 const DEFAULT_MODEL = "gpt-4o-mini";
 const FALLBACK_CHAR_LIMIT = 420;
+const DEFAULT_BASE_URL = "";
 const MAX_CACHE_ENTRIES = 500;
 const DEFAULT_CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
@@ -39,9 +40,32 @@ class LocalSummarizer {
     return this.clampLength(fallback, this.config.fallbackCharLimit!);
   }
 
-  private makeCacheKey(text: string, hint: string | undefined, model: string | undefined, apiEnabled: boolean): string {
+  private makeCacheKey(
+    text: string,
+    hint: string | undefined,
+    model: string | undefined,
+    apiEnabled: boolean,
+    baseUrl?: string,
+  ): string {
     const mode = apiEnabled ? model ?? DEFAULT_MODEL : "fallback";
-    return `${mode}::${hint ?? ""}::${text}`;
+    const endpoint = baseUrl ?? "default";
+    return `${mode}::${endpoint}::${hint ?? ""}::${text}`;
+  }
+
+  private resolveModel(): string {
+    return this.config.model || process.env.OPENAI_MODEL || DEFAULT_MODEL;
+  }
+
+  private resolveBaseUrl(): string | undefined {
+    const fromConfig = this.config.baseUrl?.trim();
+    if (fromConfig && fromConfig.length > 0) {
+      return fromConfig;
+    }
+    const fromEnv = process.env.OPENAI_BASE_URL?.trim();
+    if (fromEnv && fromEnv.length > 0) {
+      return fromEnv;
+    }
+    return undefined;
   }
 
   private getCachedSummary(key: string): string | null {
@@ -78,9 +102,10 @@ class LocalSummarizer {
       return "";
     }
 
-    const apiKey = this.config.apiKey;
-    const model = this.config.model || DEFAULT_MODEL;
-    const cacheKey = this.makeCacheKey(trimmed, hint, model, Boolean(apiKey));
+    const apiKey = this.config.apiKey ?? process.env.OPENAI_API_KEY;
+    const model = this.resolveModel();
+    const baseUrl = this.resolveBaseUrl();
+    const cacheKey = this.makeCacheKey(trimmed, hint, model, Boolean(apiKey), baseUrl);
     const cached = this.getCachedSummary(cacheKey);
     if (cached) {
       return cached;
@@ -93,7 +118,10 @@ class LocalSummarizer {
     }
 
     try {
-      const client = new OpenAI({ apiKey });
+      const client = new OpenAI({
+        apiKey,
+        baseURL: baseUrl || DEFAULT_BASE_URL || undefined,
+      });
       const prompt =
         `Summarize the text in 2-3 sentences (up to ~360 characters). ` +
         `Keep it concise and factual. ${hint ? `Context: ${hint}. ` : ""}` +
@@ -137,6 +165,7 @@ const summarizer = new LocalSummarizer({
   apiKey: process.env.OPENAI_API_KEY,
   model: process.env.OPENAI_MODEL || DEFAULT_MODEL,
   cacheTtlMs: Number(process.env.SUMMARY_CACHE_TTL_MS) || DEFAULT_CACHE_TTL_MS,
+  baseUrl: process.env.OPENAI_BASE_URL,
 });
 
 export { LocalSummarizer, summarizer };

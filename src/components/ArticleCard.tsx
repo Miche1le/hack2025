@@ -55,13 +55,13 @@ export function ArticleCard({ article }: ArticleCardProps) {
   const hasLink = Boolean(article.link);
 
   return (
-    <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition focus-within:shadow-md hover:shadow-md">
+    <article className="h-entry rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition focus-within:shadow-md hover:shadow-md">
       <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
         <a
           href={article.link ?? "#"}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-lg font-semibold text-slate-900 underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+          className="p-name text-lg font-semibold text-slate-900 underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
           onClick={(event) => {
             if (!hasLink) {
               event.preventDefault();
@@ -87,9 +87,13 @@ export function ArticleCard({ article }: ArticleCardProps) {
           </span>
         ) : null}
       </div>
-      <p className="mt-1 text-xs text-slate-500">{published}</p>
+      <p className="mt-1 text-xs text-slate-500">
+        <time className="dt-published" dateTime={article.pubDate ?? undefined}>
+          {published}
+        </time>
+      </p>
       <p
-        className="mt-3 text-sm leading-6 text-slate-700"
+        className="e-summary mt-3 text-sm leading-6 text-slate-700"
         style={{
           display: "-webkit-box",
           WebkitBoxOrient: "vertical",
@@ -104,7 +108,7 @@ export function ArticleCard({ article }: ArticleCardProps) {
           href={article.link}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-4 inline-flex items-center text-sm font-semibold text-blue-600 underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+          className="mt-4 inline-flex items-center text-sm font-semibold text-blue-600 underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 u-url"
         >
           Read full article
         </a>
