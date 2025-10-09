@@ -1,5 +1,6 @@
 import Parser from "rss-parser";
 import { extractHostname } from "./feed-utils";
+import { fetchAndCacheFeed } from "./rss-cache";
 
 const MAX_ITEMS_PER_FEED = 20;
 const FETCH_TIMEOUT_MS = 10_000;
@@ -217,7 +218,8 @@ export async function parseFeedXml(xml: string, feedUrl: string): Promise<FeedFe
 }
 
 export async function loadFeedWithMetadata(feedUrl: string): Promise<FeedFetchResult> {
-  const { xml, headers } = await fetchWithTimeout(feedUrl);
+  const fallbackFetcher = async () => fetchWithTimeout(feedUrl);
+  const { xml, headers } = await fetchAndCacheFeed(feedUrl, fallbackFetcher);
   const parsed = await parseFeedXml(xml, feedUrl);
   const headerMetadata = parseLinkHeader(headers.get("link"));
 

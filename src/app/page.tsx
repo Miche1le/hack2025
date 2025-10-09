@@ -7,6 +7,7 @@ import type { Article } from "@/types";
 import { dedupeItems, filterItemsByQuery } from "@/lib/feed-utils";
 import { loadFeed } from "@/lib/rss-parser";
 import summarizer from "@/lib/summarizer";
+import { fetchArticleContent } from "@/lib/article";
 
 const DEFAULT_FEED = "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml";
 const EMPTY_FEED_ERROR = "Add at least one RSS feed URL.";
@@ -127,8 +128,11 @@ export default function HomePage() {
 
         const summarized = await Promise.all(
           orderedItems.map(async (item) => {
-            const baseText = (item.content?.trim() || item.summary?.trim() || item.contentSnippet || item.title || "").trim();
-            const safeBase = baseText.length > 0 ? baseText : "No summary available.";
+            const articleContent = item.link ? await fetchArticleContent(item.link).catch(() => null) : null;
+            const primaryText = articleContent?.content?.trim() ?? articleContent?.description?.trim() ?? "";
+            const fallbackText = (item.content?.trim() || item.summary?.trim() || item.contentSnippet || "").trim();
+            const baseText = primaryText.length > 0 ? primaryText : fallbackText;
+            const safeBase = baseText.length > 0 ? baseText : item.title ?? "No summary available.";
             let summary = safeBase;
 
             try {
@@ -146,7 +150,7 @@ export default function HomePage() {
               pubDate: item.pubDate,
               summary,
               contentSnippet: item.contentSnippet,
-              content: item.content,
+              content: articleContent?.content ?? item.content,
               feedUrl: item.feedUrl,
             } satisfies Article;
           }),

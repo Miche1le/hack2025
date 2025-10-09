@@ -1,11 +1,15 @@
-import OpenAI from "openai";
 import type { SummarizerConfig } from "@/types";
 
-const DEFAULT_MODEL = "gpt-4o-mini";
+const DEFAULT_MODEL = "llama3.1:8b-instruct";
 const FALLBACK_CHAR_LIMIT = 420;
-const DEFAULT_BASE_URL = "";
+const DEFAULT_BASE_URL = "http://localhost:11434/v1";
 const MAX_CACHE_ENTRIES = 500;
 const DEFAULT_CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
+
+const OLLAMA_HEADERS = {
+  "content-type": "application/json",
+  accept: "application/json",
+};
 
 type CacheEntry = {
   value: string;
@@ -53,19 +57,18 @@ class LocalSummarizer {
   }
 
   private resolveModel(): string {
-    return this.config.model || process.env.OPENAI_MODEL || DEFAULT_MODEL;
+    return this.config.model || process.env.OLLAMA_MODEL || process.env.OPENAI_MODEL || DEFAULT_MODEL;
   }
 
   private resolveBaseUrl(): string | undefined {
-    const fromConfig = this.config.baseUrl?.trim();
-    if (fromConfig && fromConfig.length > 0) {
-      return fromConfig;
+    const sources = [this.config.baseUrl, process.env.OLLAMA_BASE_URL, process.env.OPENAI_BASE_URL];
+    for (const candidate of sources) {
+      const value = candidate?.trim();
+      if (value) {
+        return value;
+      }
     }
-    const fromEnv = process.env.OPENAI_BASE_URL?.trim();
-    if (fromEnv && fromEnv.length > 0) {
-      return fromEnv;
-    }
-    return undefined;
+    return DEFAULT_BASE_URL;
   }
 
   private getCachedSummary(key: string): string | null {
@@ -111,33 +114,43 @@ class LocalSummarizer {
       return cached;
     }
 
-    if (trimmed.length < 40 || !apiKey) {
+    if (trimmed.length < 40) {
       const summary = this.fallbackSummary(trimmed);
       this.setCachedSummary(cacheKey, summary);
       return summary;
     }
 
     try {
-      const client = new OpenAI({
-        apiKey,
-        baseURL: baseUrl || DEFAULT_BASE_URL || undefined,
-      });
       const prompt =
-        `Summarize the text in 2-3 sentences (up to ~360 characters). ` +
-        `Keep it concise and factual. ${hint ? `Context: ${hint}. ` : ""}` +
-        `Text:\n${trimmed}`;
+        `Суммаризируй текст максимум в 3 коротких предложения (до ~360 символов), без лишних деталей.` +
+        `${hint ? ` Контекст: ${hint}.` : ""}\n\nТекст:\n${trimmed}`;
 
-      const response = await client.chat.completions.create({
-        model,
-        messages: [
-          { role: "system", content: "You are a concise news editor." },
-          { role: "user", content: prompt }
-        ],
-        temperature: 0.2,
-        max_tokens: 220
+      const response = await fetch(`${baseUrl?.replace(/\/$/, "")}/chat/completions`, {
+        method: "POST",
+        headers: {
+          ...OLLAMA_HEADERS,
+          ...(apiKey ? { authorization: `Bearer ${apiKey}` } : {}),
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: "system", content: "Ты краткий и фактический новостной редактор." },
+            { role: "user", content: prompt },
+          ],
+          temperature: 0.2,
+          max_tokens: 220,
+        }),
       });
 
-      const output = response.choices[0]?.message?.content?.trim();
+      if (!response.ok) {
+        throw new Error(`Summarizer request failed: ${response.status}`);
+      }
+
+      const json = (await response.json()) as {
+        choices?: Array<{ message?: { content?: string } }>;
+      };
+
+      const output = json.choices?.[0]?.message?.content?.trim();
       const summary = this.clampLength(
         output && output.length > 0 ? output : this.fallbackSummary(trimmed), 
         this.config.fallbackCharLimit!
@@ -162,10 +175,10 @@ class LocalSummarizer {
 
 // Создаем глобальный экземпляр суммаризатора
 const summarizer = new LocalSummarizer({
-  apiKey: process.env.OPENAI_API_KEY,
-  model: process.env.OPENAI_MODEL || DEFAULT_MODEL,
+  apiKey: process.env.OLLAMA_API_KEY || process.env.OPENAI_API_KEY,
+  model: process.env.OLLAMA_MODEL || process.env.OPENAI_MODEL || DEFAULT_MODEL,
   cacheTtlMs: Number(process.env.SUMMARY_CACHE_TTL_MS) || DEFAULT_CACHE_TTL_MS,
-  baseUrl: process.env.OPENAI_BASE_URL,
+  baseUrl: process.env.OLLAMA_BASE_URL || process.env.OPENAI_BASE_URL || DEFAULT_BASE_URL,
 });
 
 export { LocalSummarizer, summarizer };
