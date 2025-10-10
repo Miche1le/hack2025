@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap");
 
 :root {
   --background: #fafafa;
@@ -43,23 +43,32 @@ html {
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 /* Awwwards-style typography */
-h1, h2, h3 {
-  font-family: 'Space Grotesk', 'Inter', sans-serif;
+h1,
+h2,
+h3 {
+  font-family: "Space Grotesk", "Inter", sans-serif;
   font-weight: 700;
   letter-spacing: -0.02em;
 }
 
 /* Smooth transitions */
 * {
-  transition-property: background-color, border-color, color, opacity, transform;
+  transition-property:
+    background-color, border-color, color, opacity, transform;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 200ms;
 }
@@ -142,7 +151,9 @@ h1, h2, h3 {
 
 /* Awwwards-style hover */
 .hover-card {
-  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .hover-card:hover {

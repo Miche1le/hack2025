@@ -6,7 +6,6 @@ const MAX_ITEMS_PER_FEED = 20;
 const FETCH_TIMEOUT_MS = 10_000;
 const USER_AGENT = "NewsAggregatorBot/1.0 (+https://example.com)";
 
-
 interface RSSItem {
   title?: string;
   link?: string;
@@ -61,7 +60,9 @@ function selectPublishedDate(item: RSSItem): string {
   return new Date().toISOString();
 }
 
-async function fetchWithTimeout(url: string): Promise<{ xml: string; headers: Headers }> {
+async function fetchWithTimeout(
+  url: string,
+): Promise<{ xml: string; headers: Headers }> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
@@ -76,7 +77,9 @@ async function fetchWithTimeout(url: string): Promise<{ xml: string; headers: He
     });
 
     if (!response.ok) {
-      throw new Error("Failed to fetch feed: " + response.status + " " + response.statusText);
+      throw new Error(
+        "Failed to fetch feed: " + response.status + " " + response.statusText,
+      );
     }
 
     const xml = await response.text();
@@ -164,8 +167,12 @@ function discoverWebSubLinksFromXml(xml: string): FeedMetadata {
   };
 }
 
-async function normalizeItems(feed: RSSFeed, feedUrl: string): Promise<NormalizedFeedItem[]> {
-  const feedHost = extractHostname(feed.link || feedUrl) || extractHostname(feedUrl);
+async function normalizeItems(
+  feed: RSSFeed,
+  feedUrl: string,
+): Promise<NormalizedFeedItem[]> {
+  const feedHost =
+    extractHostname(feed.link || feedUrl) || extractHostname(feedUrl);
   const items = feed.items?.slice(0, MAX_ITEMS_PER_FEED) ?? [];
 
   const normalized = items
@@ -175,7 +182,8 @@ async function normalizeItems(feed: RSSFeed, feedUrl: string): Promise<Normalize
       }
 
       const linkHost = extractHostname(item.link) || feedHost;
-      const snippetSource = item.contentSnippet || item.summary || item.content || "";
+      const snippetSource =
+        item.contentSnippet || item.summary || item.content || "";
       const snippet = snippetSource.replace(/\s+/g, " ").trim();
       const content = item.content?.trim();
 
@@ -194,7 +202,10 @@ async function normalizeItems(feed: RSSFeed, feedUrl: string): Promise<Normalize
   return normalized;
 }
 
-export async function parseFeedXml(xml: string, feedUrl: string): Promise<FeedFetchResult> {
+export async function parseFeedXml(
+  xml: string,
+  feedUrl: string,
+): Promise<FeedFetchResult> {
   const parser = new Parser({
     defaultRSS: 2.0,
     headers: {
@@ -217,13 +228,18 @@ export async function parseFeedXml(xml: string, feedUrl: string): Promise<FeedFe
   };
 }
 
-export async function loadFeedWithMetadata(feedUrl: string): Promise<FeedFetchResult> {
+export async function loadFeedWithMetadata(
+  feedUrl: string,
+): Promise<FeedFetchResult> {
   const fallbackFetcher = async () => fetchWithTimeout(feedUrl);
   const { xml, headers } = await fetchAndCacheFeed(feedUrl, fallbackFetcher);
   const parsed = await parseFeedXml(xml, feedUrl);
   const headerMetadata = parseLinkHeader(headers.get("link"));
 
-  const hubSet = new Set<string>([...parsed.metadata.hubUrls, ...(headerMetadata.hubUrls ?? [])]);
+  const hubSet = new Set<string>([
+    ...parsed.metadata.hubUrls,
+    ...(headerMetadata.hubUrls ?? []),
+  ]);
   const selfUrl = parsed.metadata.selfUrl || headerMetadata.selfUrl || feedUrl;
 
   return {

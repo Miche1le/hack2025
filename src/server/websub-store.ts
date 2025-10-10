@@ -52,7 +52,9 @@ export function getSubscription(topic: string): SubscriptionState | undefined {
   return getStore().subscriptions.get(topic);
 }
 
-export function getSubscriptionById(topicId: string): SubscriptionState | undefined {
+export function getSubscriptionById(
+  topicId: string,
+): SubscriptionState | undefined {
   const store = getStore();
   const topic = store.topicIndex.get(topicId);
   return topic ? store.subscriptions.get(topic) : undefined;
@@ -62,19 +64,29 @@ export function upsertSubscription(
   topic: string,
   feedUrl: string,
   metadata: FeedMetadata,
-  params: Partial<Omit<SubscriptionState, "topic" | "topicId" | "feedUrl" | "hubUrls" | "items">> = {},
+  params: Partial<
+    Omit<
+      SubscriptionState,
+      "topic" | "topicId" | "feedUrl" | "hubUrls" | "items"
+    >
+  > = {},
 ): SubscriptionState {
   const store = getStore();
   const existing = store.subscriptions.get(topic);
   const topicId = existing?.topicId ?? createTopicId(topic);
-  const hubUrls = Array.from(new Set([...(existing?.hubUrls ?? []), ...(metadata.hubUrls ?? [])])).filter(Boolean);
+  const hubUrls = Array.from(
+    new Set([...(existing?.hubUrls ?? []), ...(metadata.hubUrls ?? [])]),
+  ).filter(Boolean);
 
   const subscription: SubscriptionState = {
     topic,
     topicId,
     feedUrl,
     hubUrls,
-    verifyToken: existing?.verifyToken ?? params.verifyToken ?? crypto.randomBytes(16).toString("hex"),
+    verifyToken:
+      existing?.verifyToken ??
+      params.verifyToken ??
+      crypto.randomBytes(16).toString("hex"),
     secret: existing?.secret ?? params.secret,
     hubUrl: params.hubUrl ?? existing?.hubUrl,
     callbackUrl: params.callbackUrl ?? existing?.callbackUrl,
@@ -92,7 +104,10 @@ export function upsertSubscription(
   return subscription;
 }
 
-export function storeFeedItems(topic: string, items: NormalizedFeedItem[]): SubscriptionState | undefined {
+export function storeFeedItems(
+  topic: string,
+  items: NormalizedFeedItem[],
+): SubscriptionState | undefined {
   const subscription = getSubscription(topic);
   if (!subscription) {
     return undefined;
@@ -112,7 +127,10 @@ export function storeFeedItems(topic: string, items: NormalizedFeedItem[]): Subs
   return subscription;
 }
 
-function enforceItemLimit(map: Map<string, StoredFeedItem>, maxItems: number): void {
+function enforceItemLimit(
+  map: Map<string, StoredFeedItem>,
+  maxItems: number,
+): void {
   if (map.size <= maxItems) {
     return;
   }
@@ -169,4 +187,3 @@ export function clearStore(): void {
   store.subscriptions.clear();
   store.topicIndex.clear();
 }
-

@@ -24,10 +24,14 @@ export interface RefreshResult {
   warnings: string[];
 }
 
-export async function ensureSubscription(feedUrl: string): Promise<SubscriptionState> {
+export async function ensureSubscription(
+  feedUrl: string,
+): Promise<SubscriptionState> {
   const { items, metadata } = await loadFeedWithMetadata(feedUrl);
   const topicUrl = metadata.selfUrl ?? feedUrl;
-  const subscription = upsertSubscription(topicUrl, feedUrl, metadata, { mode: "pending" });
+  const subscription = upsertSubscription(topicUrl, feedUrl, metadata, {
+    mode: "pending",
+  });
 
   storeFeedItems(topicUrl, items);
 
@@ -37,7 +41,11 @@ export async function ensureSubscription(feedUrl: string): Promise<SubscriptionS
     return subscription;
   }
 
-  if (subscription.mode === "active" && subscription.leaseExpiresAt && subscription.leaseExpiresAt > Date.now()) {
+  if (
+    subscription.mode === "active" &&
+    subscription.leaseExpiresAt &&
+    subscription.leaseExpiresAt > Date.now()
+  ) {
     return subscription;
   }
 
@@ -96,7 +104,10 @@ async function requestSubscription(options: {
   });
 }
 
-async function handleSubscriptionFailure(subscription: SubscriptionState, response: Response): Promise<void> {
+async function handleSubscriptionFailure(
+  subscription: SubscriptionState,
+  response: Response,
+): Promise<void> {
   const text = await response.text().catch(() => "");
   subscription.mode = "expired";
   console.warn("WebSub subscription request failed", {
@@ -107,7 +118,9 @@ async function handleSubscriptionFailure(subscription: SubscriptionState, respon
   });
 }
 
-export async function handleVerificationCallback(params: URLSearchParams): Promise<{ status: number; body: string }> {
+export async function handleVerificationCallback(
+  params: URLSearchParams,
+): Promise<{ status: number; body: string }> {
   const mode = params.get("hub.mode");
   const topic = params.get("hub.topic");
   const challenge = params.get("hub.challenge");
@@ -143,7 +156,11 @@ export async function handleVerificationCallback(params: URLSearchParams): Promi
   return { status: 200, body: challenge };
 }
 
-export async function handleContentNotification(topic: string, body: string, headers: Headers): Promise<void> {
+export async function handleContentNotification(
+  topic: string,
+  body: string,
+  headers: Headers,
+): Promise<void> {
   const subscription = getSubscription(topic);
   if (!subscription) {
     throw new Error("Unknown topic");
@@ -175,7 +192,8 @@ export async function handleContentNotification(topic: string, body: string, hea
 }
 
 function verifySignature(body: string, headers: Headers, secret: string): void {
-  const signature = headers.get("x-hub-signature-256") ?? headers.get("x-hub-signature");
+  const signature =
+    headers.get("x-hub-signature-256") ?? headers.get("x-hub-signature");
   if (!signature) {
     throw new Error("Missing X-Hub-Signature header");
   }
@@ -185,8 +203,16 @@ function verifySignature(body: string, headers: Headers, secret: string): void {
     throw new Error("Invalid signature format");
   }
 
-  const expected = crypto.createHmac(algorithm, secret).update(body).digest("hex");
-  if (!crypto.timingSafeEqual(Buffer.from(hash, "hex"), Buffer.from(expected, "hex"))) {
+  const expected = crypto
+    .createHmac(algorithm, secret)
+    .update(body)
+    .digest("hex");
+  if (
+    !crypto.timingSafeEqual(
+      Buffer.from(hash, "hex"),
+      Buffer.from(expected, "hex"),
+    )
+  ) {
     throw new Error("Invalid signature");
   }
 }
@@ -214,9 +240,13 @@ export async function refreshFeeds(feedUrls: string[]): Promise<RefreshResult> {
       try {
         const subscription = await ensureSubscription(url);
         if (!subscription.hubUrls.length) {
-          warnings.push(`${url} does not advertise a WebSub hub. Falling back to periodic polling.`);
+          warnings.push(
+            `${url} does not advertise a WebSub hub. Falling back to periodic polling.`,
+          );
         } else if (subscription.mode === "expired") {
-          warnings.push(`Subscription for ${url} is not active yet. Will retry automatically.`);
+          warnings.push(
+            `Subscription for ${url} is not active yet. Will retry automatically.`,
+          );
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
@@ -232,7 +262,10 @@ export async function refreshFeeds(feedUrls: string[]): Promise<RefreshResult> {
   };
 }
 
-export async function processUnverifiedSubscription(topic: string, retry = 0): Promise<void> {
+export async function processUnverifiedSubscription(
+  topic: string,
+  retry = 0,
+): Promise<void> {
   const subscription = getSubscription(topic);
   if (!subscription) {
     return;
@@ -253,7 +286,8 @@ export async function processUnverifiedSubscription(topic: string, retry = 0): P
     return;
   }
 
-  const callbackUrl = subscription.callbackUrl ?? buildCallbackUrl(subscription.topicId);
+  const callbackUrl =
+    subscription.callbackUrl ?? buildCallbackUrl(subscription.topicId);
   const response = await requestSubscription({
     hubUrl,
     topicUrl: subscription.topic,
@@ -287,4 +321,3 @@ export function resolveTopicFromParams(topicId?: string | null): string | null {
   const subscription = getSubscriptionById(topicId);
   return subscription?.topic ?? null;
 }
-

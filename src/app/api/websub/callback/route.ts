@@ -27,7 +27,10 @@ export async function POST(request: NextRequest) {
   const topic = topicFromParams ?? topicFromHeaders ?? fallbackTopic;
 
   if (!topic) {
-    return NextResponse.json({ error: "Unable to resolve topic" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Unable to resolve topic" },
+      { status: 400 },
+    );
   }
 
   try {
@@ -38,4 +41,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }
-

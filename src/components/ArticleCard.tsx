@@ -50,36 +50,44 @@ function formatPublishedDate(value?: string): string {
   });
 }
 
-export function ArticleCard({ 
-  article, 
-  isFavorite = false, 
+export function ArticleCard({
+  article,
+  isFavorite = false,
   isRead = false,
   onToggleFavorite,
-  onMarkRead, 
-  theme = "light" 
+  onMarkRead,
+  theme = "light",
 }: ArticleCardProps) {
   const domain = useMemo(
     () => resolveDomain(article.link, article.source),
     [article.link, article.source],
   );
-  const published = useMemo(() => formatPublishedDate(article.pubDate), [article.pubDate]);
+  const published = useMemo(
+    () => formatPublishedDate(article.pubDate),
+    [article.pubDate],
+  );
   const title = article.title?.trim() || FALLBACK_TITLE;
   const summary = article.summary?.trim() || FALLBACK_SUMMARY;
   const hasLink = Boolean(article.link);
 
   return (
-    <article 
+    <article
       className="group relative border-b py-8 transition-opacity duration-300 hover-card"
-      style={{ 
+      style={{
         borderColor: "var(--card-border)",
-        opacity: isRead ? 0.4 : 1
+        opacity: isRead ? 0.4 : 1,
       }}
     >
       <div className="flex items-start justify-between gap-6">
         <div className="flex-1">
           {/* Meta */}
-          <div className="mb-3 flex items-center gap-3 text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
-            {domain && <span className="uppercase tracking-wider">{domain}</span>}
+          <div
+            className="mb-3 flex items-center gap-3 text-xs font-medium"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            {domain && (
+              <span className="uppercase tracking-wider">{domain}</span>
+            )}
             <span>·</span>
             <time dateTime={article.pubDate ?? undefined}>{published}</time>
           </div>
@@ -99,7 +107,7 @@ export function ArticleCard({
             title={title}
             className="block mb-4"
           >
-            <h3 
+            <h3
               className="text-2xl md:text-3xl font-bold tracking-tight line-clamp-2 transition-opacity group-hover:opacity-60"
               style={{ color: "var(--text-primary)" }}
             >
@@ -108,7 +116,7 @@ export function ArticleCard({
           </a>
 
           {/* Summary */}
-          <p 
+          <p
             className="text-base leading-relaxed line-clamp-2 mb-4"
             style={{ color: "var(--text-secondary)" }}
           >
@@ -137,15 +145,32 @@ export function ArticleCard({
           <button
             onClick={onToggleFavorite}
             className="shrink-0 p-2 transition-opacity hover:opacity-60"
-            aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+            aria-label={
+              isFavorite ? "Remove from favorites" : "Add to favorites"
+            }
           >
             {isFavorite ? (
               <svg className="h-6 w-6" fill="var(--accent)" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
+                <path
+                  fillRule="evenodd"
+                  d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                  clipRule="evenodd"
+                />
               </svg>
             ) : (
-              <svg className="h-6 w-6" style={{ color: "var(--text-secondary)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              <svg
+                className="h-6 w-6"
+                style={{ color: "var(--text-secondary)" }}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                />
               </svg>
             )}
           </button>

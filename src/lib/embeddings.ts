@@ -13,12 +13,14 @@ async function createEmbedding(text: string): Promise<number[] | null> {
   try {
     const baseUrl = OPENAI_BASE_URL || OLLAMA_BASE_URL;
     const url = `${baseUrl}/v1/embeddings`;
-    
+
     const response = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...(OPENAI_API_KEY ? { "Authorization": `Bearer ${OPENAI_API_KEY}` } : {}),
+        ...(OPENAI_API_KEY
+          ? { Authorization: `Bearer ${OPENAI_API_KEY}` }
+          : {}),
       },
       body: JSON.stringify({
         model: "nomic-embed-text", // Ollama embedding model
@@ -31,7 +33,7 @@ async function createEmbedding(text: string): Promise<number[] | null> {
       return null;
     }
 
-    const data = await response.json() as { data: EmbeddingResponse[] };
+    const data = (await response.json()) as { data: EmbeddingResponse[] };
     return data.data[0]?.embedding || null;
   } catch (error) {
     console.warn("Failed to create embedding:", error);
@@ -60,20 +62,20 @@ function cosineSimilarity(vecA: number[], vecB: number[]): number {
 // Calculate average embedding from multiple texts
 function averageEmbeddings(embeddings: number[][]): number[] | null {
   if (embeddings.length === 0) return null;
-  
+
   const dim = embeddings[0].length;
   const avg = new Array(dim).fill(0);
-  
+
   for (const embedding of embeddings) {
     for (let i = 0; i < dim; i++) {
       avg[i] += embedding[i];
     }
   }
-  
+
   for (let i = 0; i < dim; i++) {
     avg[i] /= embeddings.length;
   }
-  
+
   return avg;
 }
 
@@ -85,7 +87,10 @@ export interface ArticleWithEmbedding {
 }
 
 // Create embedding for an article
-export async function embedArticle(article: { title: string; summary?: string }): Promise<number[] | null> {
+export async function embedArticle(article: {
+  title: string;
+  summary?: string;
+}): Promise<number[] | null> {
   const text = `${article.title}\n${article.summary || ""}`.trim();
   return createEmbedding(text);
 }
@@ -94,12 +99,12 @@ export async function embedArticle(article: { title: string; summary?: string })
 export async function findSimilarArticles<T extends ArticleWithEmbedding>(
   favoriteArticles: T[],
   candidateArticles: T[],
-  topK: number = 5
+  topK: number = 5,
 ): Promise<T[]> {
   try {
     // Create embeddings for favorites (if not already embedded)
     const favoriteEmbeddings: number[][] = [];
-    
+
     for (const article of favoriteArticles) {
       if (article.embedding) {
         favoriteEmbeddings.push(article.embedding);
@@ -127,7 +132,7 @@ export async function findSimilarArticles<T extends ArticleWithEmbedding>(
 
     for (const article of candidateArticles) {
       let embedding = article.embedding;
-      
+
       if (!embedding) {
         const newEmbedding = await embedArticle(article);
         if (newEmbedding) {
@@ -154,27 +159,31 @@ export async function findSimilarArticles<T extends ArticleWithEmbedding>(
 }
 
 // Fallback: Simple keyword-based recommendations (if embeddings fail)
-export function findSimilarArticlesKeywordBased<T extends { title: string; summary?: string }>(
-  favoriteArticles: T[],
-  candidateArticles: T[],
-  topK: number = 5
-): T[] {
+export function findSimilarArticlesKeywordBased<
+  T extends { title: string; summary?: string },
+>(favoriteArticles: T[], candidateArticles: T[], topK: number = 5): T[] {
   // Extract keywords from favorites
   const favoriteKeywords = favoriteArticles
     .flatMap((article) => {
       const text = `${article.title} ${article.summary || ""}`.toLowerCase();
       return text.split(/\W+/).filter((word) => word.length > 4);
     })
-    .reduce((acc, word) => {
-      acc[word] = (acc[word] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    .reduce(
+      (acc, word) => {
+        acc[word] = (acc[word] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
   // Score candidates
   const scoredCandidates = candidateArticles.map((article) => {
     const text = `${article.title} ${article.summary || ""}`.toLowerCase();
     const words = text.split(/\W+/);
-    const score = words.reduce((sum, word) => sum + (favoriteKeywords[word] || 0), 0);
+    const score = words.reduce(
+      (sum, word) => sum + (favoriteKeywords[word] || 0),
+      0,
+    );
     return { article, score };
   });
 
@@ -185,4 +194,3 @@ export function findSimilarArticlesKeywordBased<T extends { title: string; summa
     .slice(0, topK)
     .map(({ article }) => article);
 }
-

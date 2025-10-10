@@ -15,7 +15,10 @@ import { dedupeItems } from "@/lib/feed-utils";
 export async function GET(request: NextRequest) {
   const feedsParam = request.nextUrl.searchParams.get("feeds");
   const feeds = feedsParam
-    ? feedsParam.split(",").map((feed) => feed.trim()).filter(Boolean)
+    ? feedsParam
+        .split(",")
+        .map((feed) => feed.trim())
+        .filter(Boolean)
     : DEFAULT_FEED_URLS;
 
   const { items, warnings } = await refreshFeeds(feeds);
@@ -45,7 +48,7 @@ export async function GET(request: NextRequest) {
       {
         url: absolutePath(RSS_API_PATH),
         mime_type: "application/rss+xml",
-        title: "RSS", 
+        title: "RSS",
       },
       {
         url: absolutePath(ACTIVITY_OUTBOX_PATH),
@@ -61,4 +64,3 @@ export async function GET(request: NextRequest) {
     },
   });
 }
-
