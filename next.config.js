@@ -6,6 +6,12 @@ const nextConfig = {
     SUMMARY_CACHE_TTL_MS: process.env.SUMMARY_CACHE_TTL_MS || '1800000',
     OPENAI_BASE_URL: process.env.OPENAI_BASE_URL,
   },
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals.push('canvas');
+    }
+    return config;
+  },
 }
 
 module.exports = nextConfig
