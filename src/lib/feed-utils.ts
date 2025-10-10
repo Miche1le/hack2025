@@ -48,8 +48,51 @@ export function dedupeItems<T extends { title: string; source: string; link?: st
   return unique;
 }
 
+// Advanced scoring-based search with weights
+interface ScoredItem<T> {
+  item: T;
+  score: number;
+}
+
+function calculateSearchScore(
+  text: string,
+  searchTerms: string[],
+  weight: number = 1
+): number {
+  const lowerText = text.toLowerCase();
+  let score = 0;
+
+  for (const term of searchTerms) {
+    const lowerTerm = term.toLowerCase();
+    
+    // Exact phrase match - highest score
+    if (lowerText.includes(lowerTerm)) {
+      score += weight * 10;
+      
+      // Bonus for word boundary match (not part of larger word)
+      const regex = new RegExp(`\\b${lowerTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+      const matches = lowerText.match(regex);
+      if (matches) {
+        score += matches.length * weight * 5;
+      }
+    }
+    
+    // Partial word matches (for longer terms)
+    if (lowerTerm.length > 4) {
+      const words = lowerText.split(/\s+/);
+      for (const word of words) {
+        if (word.includes(lowerTerm) || lowerTerm.includes(word)) {
+          score += weight * 2;
+        }
+      }
+    }
+  }
+
+  return score;
+}
+
 export function filterItemsByQuery<
-  T extends { title: string; contentSnippet?: string; content?: string }
+  T extends { title: string; contentSnippet?: string; content?: string; summary?: string; searchScore?: number }
 >(
   items: T[], 
   queryTerms: string[]
@@ -66,11 +109,26 @@ export function filterItemsByQuery<
     return items;
   }
 
-  return items.filter((item) => {
-    const haystack = [item.title, item.content, item.contentSnippet]
-      .map((segment) => segment?.toLowerCase() ?? "")
-      .join(" ");
+  // Score each item
+  const scoredItems: ScoredItem<T>[] = items.map((item) => {
+    let totalScore = 0;
 
-    return normalizedTerms.some((term) => haystack.includes(term));
+    // Title has highest weight (3x)
+    totalScore += calculateSearchScore(item.title || "", normalizedTerms, 3);
+
+    // Summary has medium weight (2x)
+    totalScore += calculateSearchScore(item.summary || "", normalizedTerms, 2);
+
+    // Content snippets have lower weight (1x)
+    totalScore += calculateSearchScore(item.contentSnippet || "", normalizedTerms, 1);
+    totalScore += calculateSearchScore(item.content || "", normalizedTerms, 0.5);
+
+    return { item, score: totalScore };
   });
+
+  // Filter items with score > 0, attach score, and sort by score descending
+  return scoredItems
+    .filter(({ score }) => score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map(({ item, score }) => ({ ...item, searchScore: score }));
 }

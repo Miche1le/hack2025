@@ -1,3 +1,4 @@
+// @ts-ignore - временное решение для проблем с типами
 import { extract } from "@extractus/article-extractor";
 
 export interface ExtractedArticle {
@@ -9,7 +10,7 @@ export async function fetchArticleContent(url: string): Promise<ExtractedArticle
   try {
     const result = await extract(url, {
       descriptionLengthThreshold: 120,
-      fetch: (input, init) => fetch(input, {
+      fetch: (input: any, init: any) => fetch(input, {
         ...init,
         headers: {
           "user-agent": "Mozilla/5.0 (compatible; Hack2025Bot/1.0)",

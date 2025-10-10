@@ -8,6 +8,8 @@ export interface Article {
   feedUrl?: string;
   contentSnippet?: string;
   content?: string;
+  searchScore?: number;
+  embedding?: number[];
 }
 
 export interface FeedMetadata {
