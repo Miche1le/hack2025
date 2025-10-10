@@ -30,7 +30,9 @@ class LocalSummarizer {
   }
 
   private clampLength(value: string, max: number): string {
-    return value && value.length > max ? value.slice(0, max - 1).trimEnd() + "..." : value;
+    return value && value.length > max
+      ? value.slice(0, max - 1).trimEnd() + "..."
+      : value;
   }
 
   private fallbackSummary(text: string): string {
@@ -51,17 +53,26 @@ class LocalSummarizer {
     apiEnabled: boolean,
     baseUrl?: string,
   ): string {
-    const mode = apiEnabled ? model ?? DEFAULT_MODEL : "fallback";
+    const mode = apiEnabled ? (model ?? DEFAULT_MODEL) : "fallback";
     const endpoint = baseUrl ?? "default";
     return `${mode}::${endpoint}::${hint ?? ""}::${text}`;
   }
 
   private resolveModel(): string {
-    return this.config.model || process.env.OLLAMA_MODEL || process.env.OPENAI_MODEL || DEFAULT_MODEL;
+    return (
+      this.config.model ||
+      process.env.OLLAMA_MODEL ||
+      process.env.OPENAI_MODEL ||
+      DEFAULT_MODEL
+    );
   }
 
   private resolveBaseUrl(): string | undefined {
-    const sources = [this.config.baseUrl, process.env.OLLAMA_BASE_URL, process.env.OPENAI_BASE_URL];
+    const sources = [
+      this.config.baseUrl,
+      process.env.OLLAMA_BASE_URL,
+      process.env.OPENAI_BASE_URL,
+    ];
     for (const candidate of sources) {
       const value = candidate?.trim();
       if (value) {
@@ -93,9 +104,9 @@ class LocalSummarizer {
       }
     }
 
-    this.cache.set(key, { 
-      value, 
-      expiresAt: Date.now() + this.config.cacheTtlMs! 
+    this.cache.set(key, {
+      value,
+      expiresAt: Date.now() + this.config.cacheTtlMs!,
     });
   }
 
@@ -108,7 +119,13 @@ class LocalSummarizer {
     const apiKey = this.config.apiKey ?? process.env.OPENAI_API_KEY;
     const model = this.resolveModel();
     const baseUrl = this.resolveBaseUrl();
-    const cacheKey = this.makeCacheKey(trimmed, hint, model, Boolean(apiKey), baseUrl);
+    const cacheKey = this.makeCacheKey(
+      trimmed,
+      hint,
+      model,
+      Boolean(apiKey),
+      baseUrl,
+    );
     const cached = this.getCachedSummary(cacheKey);
     if (cached) {
       return cached;
@@ -125,22 +142,28 @@ class LocalSummarizer {
         `Суммаризируй текст максимум в 3 коротких предложения (до ~360 символов), без лишних деталей.` +
         `${hint ? ` Контекст: ${hint}.` : ""}\n\nТекст:\n${trimmed}`;
 
-      const response = await fetch(`${baseUrl?.replace(/\/$/, "")}/chat/completions`, {
-        method: "POST",
-        headers: {
-          ...OLLAMA_HEADERS,
-          ...(apiKey ? { authorization: `Bearer ${apiKey}` } : {}),
+      const response = await fetch(
+        `${baseUrl?.replace(/\/$/, "")}/chat/completions`,
+        {
+          method: "POST",
+          headers: {
+            ...OLLAMA_HEADERS,
+            ...(apiKey ? { authorization: `Bearer ${apiKey}` } : {}),
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              {
+                role: "system",
+                content: "Ты краткий и фактический новостной редактор.",
+              },
+              { role: "user", content: prompt },
+            ],
+            temperature: 0.2,
+            max_tokens: 220,
+          }),
         },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: "system", content: "Ты краткий и фактический новостной редактор." },
-            { role: "user", content: prompt },
-          ],
-          temperature: 0.2,
-          max_tokens: 220,
-        }),
-      });
+      );
 
       if (!response.ok) {
         throw new Error(`Summarizer request failed: ${response.status}`);
@@ -152,8 +175,8 @@ class LocalSummarizer {
 
       const output = json.choices?.[0]?.message?.content?.trim();
       const summary = this.clampLength(
-        output && output.length > 0 ? output : this.fallbackSummary(trimmed), 
-        this.config.fallbackCharLimit!
+        output && output.length > 0 ? output : this.fallbackSummary(trimmed),
+        this.config.fallbackCharLimit!,
       );
       this.setCachedSummary(cacheKey, summary);
       return summary;
@@ -178,7 +201,10 @@ const summarizer = new LocalSummarizer({
   apiKey: process.env.OLLAMA_API_KEY || process.env.OPENAI_API_KEY,
   model: process.env.OLLAMA_MODEL || process.env.OPENAI_MODEL || DEFAULT_MODEL,
   cacheTtlMs: Number(process.env.SUMMARY_CACHE_TTL_MS) || DEFAULT_CACHE_TTL_MS,
-  baseUrl: process.env.OLLAMA_BASE_URL || process.env.OPENAI_BASE_URL || DEFAULT_BASE_URL,
+  baseUrl:
+    process.env.OLLAMA_BASE_URL ||
+    process.env.OPENAI_BASE_URL ||
+    DEFAULT_BASE_URL,
 });
 
 export { LocalSummarizer, summarizer };

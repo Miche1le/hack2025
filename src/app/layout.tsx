@@ -40,15 +40,30 @@ export default function RootLayout({ children }: PropsWithChildren) {
       <body className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
         <link rel="hub" href={DEFAULT_HUB_URL} />
         <link rel="self" href={JSON_FEED_PATH} type="application/json" />
-        <link rel="alternate" type="application/json" href={JSON_FEED_PATH} title="JSON Feed" />
+        <link
+          rel="alternate"
+          type="application/json"
+          href={JSON_FEED_PATH}
+          title="JSON Feed"
+        />
         <link
           rel="alternate"
           type="application/activity+json"
           href={ACTIVITY_OUTBOX_PATH}
           title="ActivityStreams Outbox"
         />
-        <link rel="alternate" type="application/activity+json" href={ACTIVITY_ACTOR_PATH} title="ActivityPub Actor" />
-        <link rel="alternate" type="application/rss+xml" href={RSS_API_PATH} title="RSS Feed" />
+        <link
+          rel="alternate"
+          type="application/activity+json"
+          href={ACTIVITY_ACTOR_PATH}
+          title="ActivityPub Actor"
+        />
+        <link
+          rel="alternate"
+          type="application/rss+xml"
+          href={RSS_API_PATH}
+          title="RSS Feed"
+        />
         <link rel="icon" href="/favicon.ico" />
         {children}
       </body>

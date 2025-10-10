@@ -24,12 +24,20 @@ function buildRss(items: Article[], warnings: string[]): string {
   const itemEntries = items
     .map((item) => {
       const title = item.title ? `<title>${escapeXml(item.title)}</title>` : "";
-      const pubDate = item.pubDate ? `<pubDate>${new Date(item.pubDate).toUTCString()}</pubDate>` : "";
+      const pubDate = item.pubDate
+        ? `<pubDate>${new Date(item.pubDate).toUTCString()}</pubDate>`
+        : "";
       const descriptionContent = item.content ?? item.contentSnippet ?? "";
-      const description = descriptionContent ? `<description><![CDATA[${descriptionContent}]]></description>` : "";
-      const guid = item.link ? `<guid isPermaLink="true">${escapeXml(item.link)}</guid>` : "";
+      const description = descriptionContent
+        ? `<description><![CDATA[${descriptionContent}]]></description>`
+        : "";
+      const guid = item.link
+        ? `<guid isPermaLink="true">${escapeXml(item.link)}</guid>`
+        : "";
       const link = item.link ? `<link>${escapeXml(item.link)}</link>` : "";
-      const source = item.source ? `<author>${escapeXml(item.source)}</author>` : "";
+      const source = item.source
+        ? `<author>${escapeXml(item.source)}</author>`
+        : "";
 
       return `<item>
         ${title}
@@ -64,7 +72,10 @@ function buildRss(items: Article[], warnings: string[]): string {
 export async function GET(request: NextRequest) {
   const feedsParam = request.nextUrl.searchParams.get("feeds");
   const feeds = feedsParam
-    ? feedsParam.split(",").map((feed) => feed.trim()).filter(Boolean)
+    ? feedsParam
+        .split(",")
+        .map((feed) => feed.trim())
+        .filter(Boolean)
     : DEFAULT_FEED_URLS;
 
   const { items, warnings } = await refreshFeeds(feeds);
@@ -86,7 +97,7 @@ export async function GET(request: NextRequest) {
     headers: {
       "content-type": "application/rss+xml; charset=utf-8",
       "cache-control": "public, max-age=120",
-      "link": `<${absolutePath("/api/feed.json")}>; rel="alternate"; type="application/json"`,
+      link: `<${absolutePath("/api/feed.json")}>; rel="alternate"; type="application/json"`,
     },
   });
 }
@@ -118,4 +129,3 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({ items: uniqueItems, warnings });
 }
-

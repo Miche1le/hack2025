@@ -25,13 +25,20 @@ export function normalizeTitle(title: string): string {
     .trim();
 }
 
-export function createDedupKey(title: string, source: string, link?: string): string {
+export function createDedupKey(
+  title: string,
+  source: string,
+  link?: string,
+): string {
   const normalizedTitle = normalizeTitle(title);
-  const normalizedSource = extractHostname(source) || extractHostname(link) || "unknown";
+  const normalizedSource =
+    extractHostname(source) || extractHostname(link) || "unknown";
   return `${normalizedTitle}::${normalizedSource}`;
 }
 
-export function dedupeItems<T extends { title: string; source: string; link?: string }>(items: T[]): T[] {
+export function dedupeItems<
+  T extends { title: string; source: string; link?: string },
+>(items: T[]): T[] {
   const seen = new Set<string>();
   const unique: T[] = [];
 
@@ -57,26 +64,29 @@ interface ScoredItem<T> {
 function calculateSearchScore(
   text: string,
   searchTerms: string[],
-  weight: number = 1
+  weight: number = 1,
 ): number {
   const lowerText = text.toLowerCase();
   let score = 0;
 
   for (const term of searchTerms) {
     const lowerTerm = term.toLowerCase();
-    
+
     // Exact phrase match - highest score
     if (lowerText.includes(lowerTerm)) {
       score += weight * 10;
-      
+
       // Bonus for word boundary match (not part of larger word)
-      const regex = new RegExp(`\\b${lowerTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+      const regex = new RegExp(
+        `\\b${lowerTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`,
+        "gi",
+      );
       const matches = lowerText.match(regex);
       if (matches) {
         score += matches.length * weight * 5;
       }
     }
-    
+
     // Partial word matches (for longer terms)
     if (lowerTerm.length > 4) {
       const words = lowerText.split(/\s+/);
@@ -92,11 +102,14 @@ function calculateSearchScore(
 }
 
 export function filterItemsByQuery<
-  T extends { title: string; contentSnippet?: string; content?: string; summary?: string; searchScore?: number }
->(
-  items: T[], 
-  queryTerms: string[]
-): T[] {
+  T extends {
+    title: string;
+    contentSnippet?: string;
+    content?: string;
+    summary?: string;
+    searchScore?: number;
+  },
+>(items: T[], queryTerms: string[]): T[] {
   if (!Array.isArray(queryTerms) || queryTerms.length === 0) {
     return items;
   }
@@ -120,8 +133,16 @@ export function filterItemsByQuery<
     totalScore += calculateSearchScore(item.summary || "", normalizedTerms, 2);
 
     // Content snippets have lower weight (1x)
-    totalScore += calculateSearchScore(item.contentSnippet || "", normalizedTerms, 1);
-    totalScore += calculateSearchScore(item.content || "", normalizedTerms, 0.5);
+    totalScore += calculateSearchScore(
+      item.contentSnippet || "",
+      normalizedTerms,
+      1,
+    );
+    totalScore += calculateSearchScore(
+      item.content || "",
+      normalizedTerms,
+      0.5,
+    );
 
     return { item, score: totalScore };
   });

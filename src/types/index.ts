@@ -39,7 +39,6 @@ export interface JsonFeedResponse {
   items: JsonFeedItem[];
 }
 
-
 export interface FetchResponseItem {
   id: string;
   title: string;

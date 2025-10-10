@@ -6,17 +6,21 @@ export interface ExtractedArticle {
   description?: string;
 }
 
-export async function fetchArticleContent(url: string): Promise<ExtractedArticle | null> {
+export async function fetchArticleContent(
+  url: string,
+): Promise<ExtractedArticle | null> {
   try {
     const result = await extract(url, {
       descriptionLengthThreshold: 120,
-      fetch: (input: any, init: any) => fetch(input, {
-        ...init,
-        headers: {
-          "user-agent": "Mozilla/5.0 (compatible; Hack2025Bot/1.0)",
-          accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        },
-      }),
+      fetch: (input: any, init: any) =>
+        fetch(input, {
+          ...init,
+          headers: {
+            "user-agent": "Mozilla/5.0 (compatible; Hack2025Bot/1.0)",
+            accept:
+              "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          },
+        }),
     });
 
     if (!result) {
@@ -32,4 +36,3 @@ export async function fetchArticleContent(url: string): Promise<ExtractedArticle
     return null;
   }
 }
-

@@ -19,14 +19,19 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const feedsParam = searchParams.get("feeds");
   const feeds = feedsParam
-    ? feedsParam.split(",").map((entry) => entry.trim()).filter(Boolean)
+    ? feedsParam
+        .split(",")
+        .map((entry) => entry.trim())
+        .filter(Boolean)
     : DEFAULT_FEED_URLS;
 
   const { items, warnings } = await refreshFeeds(feeds);
   const uniqueItems = dedupeItems(items).slice(0, 50);
 
   const ordered = uniqueItems.map((item) => {
-    const published = item.pubDate ? new Date(item.pubDate).toISOString() : undefined;
+    const published = item.pubDate
+      ? new Date(item.pubDate).toISOString()
+      : undefined;
     const htmlContent = item.content || item.contentSnippet || item.title;
     return {
       id: `${outboxUrl}#${encodeURIComponent(item.link)}`,
@@ -76,4 +81,3 @@ export async function GET(request: NextRequest) {
     },
   });
 }
-

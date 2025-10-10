@@ -41,7 +41,9 @@ function normalizeQueryTerms(raw: string): string[] {
     .filter(Boolean);
 }
 
-function buildArticleFromFeed(item: Awaited<ReturnType<typeof loadFeed>>[number]): Article {
+function buildArticleFromFeed(
+  item: Awaited<ReturnType<typeof loadFeed>>[number],
+): Article {
   return {
     id: `${item.title}::${item.source ?? "unknown"}::${item.link}`,
     title: item.title,
@@ -59,11 +61,24 @@ async function summarizeArticles(items: Article[]): Promise<Article[]> {
   return Promise.all(
     items.map(async (item) => {
       try {
-        const articleContent = item.link ? await fetchArticleContent(item.link).catch(() => null) : null;
-        const primaryText = articleContent?.content?.trim() ?? articleContent?.description?.trim() ?? "";
-        const fallbackText = (item.content?.trim() || item.summary?.trim() || item.contentSnippet || "").trim();
+        const articleContent = item.link
+          ? await fetchArticleContent(item.link).catch(() => null)
+          : null;
+        const primaryText =
+          articleContent?.content?.trim() ??
+          articleContent?.description?.trim() ??
+          "";
+        const fallbackText = (
+          item.content?.trim() ||
+          item.summary?.trim() ||
+          item.contentSnippet ||
+          ""
+        ).trim();
         const baseText = primaryText.length > 0 ? primaryText : fallbackText;
-        const safeBase = baseText.length > 0 ? baseText : item.title ?? "No summary available.";
+        const safeBase =
+          baseText.length > 0
+            ? baseText
+            : (item.title ?? "No summary available.");
 
         const generated = await summarizer
           .summarize(safeBase, item.title)
@@ -76,7 +91,10 @@ async function summarizeArticles(items: Article[]): Promise<Article[]> {
           content: articleContent?.content ?? item.content,
         };
       } catch (error) {
-        console.warn("Failed to summarize feed item", { link: item.link, error });
+        console.warn("Failed to summarize feed item", {
+          link: item.link,
+          error,
+        });
         return item;
       }
     }),
@@ -101,10 +119,12 @@ export async function POST(request: NextRequest) {
 
   try {
     const results = await Promise.allSettled(
-      feedUrls.map(async (feedUrl): Promise<FeedQuerySnapshot> => ({
-        feedUrl,
-        items: await loadFeed(feedUrl),
-      })),
+      feedUrls.map(
+        async (feedUrl): Promise<FeedQuerySnapshot> => ({
+          feedUrl,
+          items: await loadFeed(feedUrl),
+        }),
+      ),
     );
 
     const collectedItems: Article[] = [];
@@ -115,7 +135,10 @@ export async function POST(request: NextRequest) {
         const { items } = result.value;
         collectedItems.push(...items.map(buildArticleFromFeed));
       } else {
-        const reason = result.reason instanceof Error ? result.reason.message : String(result.reason);
+        const reason =
+          result.reason instanceof Error
+            ? result.reason.message
+            : String(result.reason);
         failures.push(`${feedUrls[index]}: ${reason}`);
       }
     });
@@ -123,7 +146,8 @@ export async function POST(request: NextRequest) {
     if (collectedItems.length === 0) {
       return NextResponse.json(
         {
-          error: "No stories could be retrieved. Check the feed URLs and try again.",
+          error:
+            "No stories could be retrieved. Check the feed URLs and try again.",
           warnings: failures,
         },
         { status: 200 },
@@ -147,7 +171,10 @@ export async function POST(request: NextRequest) {
     const queryTerms = normalizeQueryTerms(query);
     const filtered = filterItemsByQuery(summarized, queryTerms);
 
-    return NextResponse.json({ articles: filtered, warnings: failures }, { status: 200 });
+    return NextResponse.json(
+      { articles: filtered, warnings: failures },
+      { status: 200 },
+    );
   } catch (error) {
     console.error("Failed to process feed request", error);
     return NextResponse.json({ error: GENERIC_ERROR }, { status: 500 });
