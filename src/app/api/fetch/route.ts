@@ -75,9 +75,33 @@ async function summarizeArticles(items: Article[]): Promise<Article[]> {
           ""
         ).trim();
         const baseText = primaryText.length > 0 ? primaryText : fallbackText;
+        
+        // Функция для очистки HTML тегов
+        const stripHtmlTags = (html: string): string => {
+          if (!html) return "";
+          return html
+            // Удаляем скрипты и стили полностью
+            .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+            .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+            // Заменяем блочные элементы на пробелы перед удалением тегов
+            .replace(/<\/?(?:div|p|h[1-6]|li|br|hr)[^>]*>/gi, " ")
+            // Удаляем остальные HTML теги
+            .replace(/<[^>]*>/g, "")
+            // Декодируем HTML entities
+            .replace(/&amp;/g, "&")
+            .replace(/&lt;/g, "<")
+            .replace(/&gt;/g, ">")
+            .replace(/&quot;/g, '"')
+            .replace(/&#39;/g, "'")
+            .replace(/&nbsp;/g, " ")
+            // Нормализуем пробелы
+            .replace(/\s+/g, " ")
+            .trim();
+        };
+        
         const safeBase =
           baseText.length > 0
-            ? baseText
+            ? stripHtmlTags(baseText)
             : (item.title ?? "No summary available.");
 
         const generated = await summarizer
@@ -85,7 +109,7 @@ async function summarizeArticles(items: Article[]): Promise<Article[]> {
           .then((result) => result?.trim())
           .catch(() => null);
 
-        return {
+          return {
           ...item,
           summary: generated && generated.length > 0 ? generated : safeBase,
           content: articleContent?.content ?? item.content,

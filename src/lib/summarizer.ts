@@ -29,6 +29,29 @@ class LocalSummarizer {
     };
   }
 
+  private stripHtmlTags(html: string): string {
+    if (!html) return "";
+    
+    return html
+      // Удаляем скрипты и стили полностью
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+      // Заменяем блочные элементы на пробелы перед удалением тегов
+      .replace(/<\/?(?:div|p|h[1-6]|li|br|hr)[^>]*>/gi, " ")
+      // Удаляем остальные HTML теги
+      .replace(/<[^>]*>/g, "")
+      // Декодируем HTML entities
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&nbsp;/g, " ")
+      // Нормализуем пробелы
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
   private clampLength(value: string, max: number): string {
     return value && value.length > max
       ? value.slice(0, max - 1).trimEnd() + "..."
@@ -36,13 +59,14 @@ class LocalSummarizer {
   }
 
   private fallbackSummary(text: string): string {
-    const sentences = (text || "")
-      .replace(/\s+/g, " ")
+    // Очищаем HTML теги перед обработкой
+    const cleanText = this.stripHtmlTags(text || "");
+    const sentences = cleanText
       .split(/(?<=[.!?])\s+/)
       .filter(Boolean)
       .slice(0, 3)
       .join(" ");
-    const fallback = sentences || text;
+    const fallback = sentences || cleanText;
     return this.clampLength(fallback, this.config.fallbackCharLimit!);
   }
 
@@ -111,8 +135,9 @@ class LocalSummarizer {
   }
 
   async summarize(text: string, hint?: string): Promise<string> {
-    const trimmed = (text || "").trim();
-    if (trimmed.length === 0) {
+    // Очищаем HTML теги перед обработкой
+    const cleanText = this.stripHtmlTags(text || "").trim();
+    if (cleanText.length === 0) {
       return "";
     }
 
@@ -120,7 +145,7 @@ class LocalSummarizer {
     const model = this.resolveModel();
     const baseUrl = this.resolveBaseUrl();
     const cacheKey = this.makeCacheKey(
-      trimmed,
+      cleanText,
       hint,
       model,
       Boolean(apiKey),
@@ -131,8 +156,8 @@ class LocalSummarizer {
       return cached;
     }
 
-    if (trimmed.length < 40) {
-      const summary = this.fallbackSummary(trimmed);
+    if (cleanText.length < 40) {
+      const summary = this.fallbackSummary(cleanText);
       this.setCachedSummary(cacheKey, summary);
       return summary;
     }
@@ -140,7 +165,7 @@ class LocalSummarizer {
     try {
       const prompt =
         `Суммаризируй текст максимум в 3 коротких предложения (до ~360 символов), без лишних деталей.` +
-        `${hint ? ` Контекст: ${hint}.` : ""}\n\nТекст:\n${trimmed}`;
+        `${hint ? ` Контекст: ${hint}.` : ""}\n\nТекст:\n${cleanText}`;
 
       const response = await fetch(
         `${baseUrl?.replace(/\/$/, "")}/chat/completions`,
@@ -175,13 +200,13 @@ class LocalSummarizer {
 
       const output = json.choices?.[0]?.message?.content?.trim();
       const summary = this.clampLength(
-        output && output.length > 0 ? output : this.fallbackSummary(trimmed),
+        output && output.length > 0 ? output : this.fallbackSummary(cleanText),
         this.config.fallbackCharLimit!,
       );
       this.setCachedSummary(cacheKey, summary);
       return summary;
     } catch {
-      const summary = this.fallbackSummary(trimmed);
+      const summary = this.fallbackSummary(cleanText);
       this.setCachedSummary(cacheKey, summary);
       return summary;
     }
