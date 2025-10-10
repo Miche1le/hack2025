@@ -1,81 +1,184 @@
-# Hack2025 News Aggregator
+# Hack2025 Frontend - News Aggregator
 
-A Next.js 14 monorepo that gathers news from a configurable list of RSS feeds, deduplicates stories, adds short summaries, and surfaces warnings for failing sources. The project is structured for collaborative development between local IDE work and cloud agents.
+A modern Next.js 14 application for aggregating and summarizing news from RSS feeds with local AI-powered summarization.
 
 ## Features
-- **Multi-source feed ingestion** with normalization and deduplication logic shared across services.
-- **Keyword filtering** and automatic refresh interval in the web UI.
-- **Summary generation** via OpenAI with an in-memory cache and deterministic fallback summariser.
-- **Warning panel** that reports feeds that failed during the last refresh and highlights the total count.
-- **CI/CD pipeline** covering lint, test, build, guard workflows, and a Vercel deployment pipeline.
-- **Automated patch ingestion** script to convert `patch.diff` drops into PRs with optional auto-merge.
 
-## Repository layout
+- **WebSub-first delivery**: Automatic discovery of hubs, background subscription management, fallback polling
+- **Semantic feeds**: Built-in JSON Feed (`/api/feed.json`), ActivityStreams outbox (`/api/activitypub/outbox`), and RSS (`/api/rss`)
+- **Microformats h-feed**: Main UI exposes h-feed/h-entry microformats for Fediverse and microformats consumers
+- **RSS Feed Aggregation**: Collect news from multiple RSS sources in parallel with timeout protection
+- **Local Summarization**: Works with OpenAI *or* any OpenAI-compatible LLM (e.g. Ollama) with graceful local fallback
+- **Smart Deduplication & Filtering**: Remove duplicates and filter by keywords
+- **Real-time Updates**: Auto-refresh feeds at configurable intervals
+- **Responsive Design**: Modern UI built with Tailwind CSS
+- **Robust Error Handling**: Graceful handling of failed feeds with surfaced warnings
+
+## Tech Stack
+
+- **Framework**: Next.js 14 with App Router
+- **Styling**: Tailwind CSS
+- **TypeScript**: Full type safety
+- **RSS Parsing**: rss-parser library
+- **AI Summarization**: OpenAI or Ollama (OpenAI-compatible) with local fallback
+- **State Management**: React hooks and local state
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 20+
+- npm or yarn
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd hack2025-frontend
 ```
-apps/web              # Next.js application (App Router) and API routes
-packages/shared       # Reusable utilities, types, summariser, and unit tests
-services/api          # Feed ingestion helpers consumed by the Next API route
-scripts/ide_patch_ingest.ps1   # Task-scheduler friendly patch ingestion helper
-.github/workflows     # CI (lint/test/build), guard, and deploy pipelines
-docs/                 # Integration notes and auxiliary documentation
+
+2. Install dependencies:
+```bash
+npm install
+# or
+yarn install
 ```
 
-## Getting started
-1. **Install prerequisites**
-   - Node.js 20+
-   - pnpm 10.18.0+
-2. **Install dependencies**
-   ```bash
-   pnpm install
-   ```
-3. **Configure environment variables**
-   - Copy `.env.example` to `.env.local` at the repository root or within `apps/web` depending on your preferred layout.
-   - Provide at minimum:
-     - `OPENAI_API_KEY` (optional; summaries fall back to extractive mode without it)
-     - `OPENAI_MODEL` (optional, defaults to `gpt-4o-mini`)
-     - `SUMMARY_CACHE_TTL_MS` to tune cache expiry (defaults to 30 minutes).
-4. **Run the development server**
-   ```bash
-   pnpm dev
-   ```
-   This launches the web app on `http://localhost:3000`.
+3. Copy the environment template and configure:
 
-## Testing and quality checks
-- Run all tests: `pnpm test`
-- Watch tests during development: `pnpm test:watch`
-- Lint the Next.js app: `pnpm lint:web`
-- Workspace-wide lint (includes scripts and config files): `pnpm lint:workspace`
+```bash
+cp .env.example .env.local
+```
 
-CI mirrors these commands in `.github/workflows/ci.yml`, ensuring parity between local and remote checks.
+Edit `.env.local` with values similar to the following (values shown below assume an Ollama instance reachable at `http://localhost:11434`):
+
+```env
+# Required: public URL for metadata, feeds, and ActivityPub endpoints
+NEXT_PUBLIC_SITE_URL=https://news.example.com
+
+# Optional: prefer a specific WebSub hub
+NEXT_PUBLIC_WEBSUB_HUB=https://pubsubhubbub.appspot.com/
+
+# Required: base URL used when constructing WebSub callbacks
+WEBSUB_CALLBACK_BASE_URL=https://news.example.com
+
+# Summarization (set either OpenAI or Ollama-compatible endpoint)
+# Example for Ollama llama3.1 running locally
+OPENAI_API_KEY=sk-local
+OPENAI_MODEL=llama3.1:8b-instruct-q4_0
+OPENAI_BASE_URL=http://localhost:11434/v1
+
+# Optional tuning
+SUMMARY_CACHE_TTL_MS=1800000
+```
+
+4. Run the development server:
+```bash
+npm run dev
+# or
+yarn dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Usage
+
+1. **Add RSS Feeds**: Paste RSS feed URLs in the textarea (one per line).
+2. **Set Keywords**: Add comma-separated keywords to filter articles.
+3. **Configure Refresh**: Set auto-refresh interval in minutes.
+4. **View Articles**: Browse summarized articles ordered by publication time.
+5. **Consume from other clients**:
+   - JSON Feed → `GET /api/feed.json`
+   - RSS → `GET /api/rss`
+   - ActivityStreams outbox → `GET /api/activitypub/outbox`
+   - ActivityPub actor → `GET /api/activitypub/actor`
+
+## Local Summarization
+
+Feed summaries are generated by `src/lib/summarizer.ts`. Configuration highlights:
+
+- **OpenAI-compatible**: Works with OpenAI, Ollama (`llama3.1:8b-instruct-q4_0`, etc.), LocalAI, LM Studio — anything exposing the Chat Completions API.
+- **Environment-driven**: `OPENAI_BASE_URL` selects the endpoint, `OPENAI_MODEL` and `OPENAI_API_KEY` (dummy for Ollama) define the model. Fallback summarizer kicks in when API is unavailable.
+- **Caching**: In-memory cache keyed by model/base URL combination, TTL controlled via `SUMMARY_CACHE_TTL_MS`.
+
+## Project Structure
+
+```
+src/
+├── app/
+│   ├── api/
+│   │   ├── rss/route.ts                # RSS endpoint (WebSub-aware)
+│   │   ├── feed.json/route.ts          # JSON Feed endpoint
+│   │   ├── activitypub/actor/route.ts  # ActivityPub actor document
+│   │   ├── activitypub/outbox/route.ts # ActivityStreams collection
+│   │   └── websub/callback/route.ts    # WebSub verification + push handler
+│   ├── layout.tsx                      # Metadata + feed link tags
+│   └── page.tsx                        # Main dashboard with h-feed markup
+├── components/ArticleCard.tsx          # Article rendering with h-entry classes
+├── lib/
+│   ├── feed-utils.ts                   # Filtering/dedup utilities
+│   ├── rss-parser.ts                   # Feed parsing + hub discovery
+│   ├── site-config.ts                  # Shared constants & helpers
+│   └── summarizer.ts                   # Summarization pipeline
+├── server/
+│   ├── websub.ts                       # Subscription orchestration
+│   └── websub-store.ts                 # In-memory WebSub state cache
+└── types/index.ts                      # Shared type definitions
+```
+
+## Development
+
+### Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
+- `npm run lint:fix` - Fix ESLint issues
+- `npm run type-check` - Run TypeScript type checking
+
+### Code Quality
+
+- ESLint configuration (`.eslintrc.json`) based on Next.js + Prettier
+- TypeScript static analysis (`npm run type-check`)
+- Tailwind CSS for consistent styling
 
 ## Deployment
-The repository ships with `.github/workflows/deploy.yml`, which promotes the `apps/web` build to Vercel whenever `main` changes. To activate it:
-1. Create a Vercel project pointing to the `apps/web` directory.
-2. Add the following GitHub secrets in the repository settings:
-   - `VERCEL_TOKEN`
-   - `VERCEL_ORG_ID`
-   - `VERCEL_PROJECT_ID`
-3. (Optional) Populate project-level environment variables (e.g. `OPENAI_API_KEY`) through Vercel or GitHub encrypted secrets.
 
-Once configured, pushes to `main` and manual `workflow_dispatch` events will deploy automatically. The job pre-builds the app (`pnpm --filter web build`) before invoking `vercel/action@v3` for the production deploy.
+Regardless of platform, ensure the application is exposed publicly (HTTPS) so WebSub hubs can reach `/api/websub/callback`.
 
-## Automated IDE patch ingestion
-`scripts/ide_patch_ingest.ps1` converts periodic `patch.diff` drops into pull requests:
-1. Schedule the script with Windows Task Scheduler (recommended cadence: every 5 minutes).
-2. Ensure Git credentials and GitHub CLI (`gh`) are available on the host.
-3. Place a `patch.diff` file at the configured `PatchPath`; the script will:
-   - Create a topic branch off `dev`.
-   - Apply the patch (falling back to `--reject` on conflicts).
-   - Push the branch and create an auto-merge PR if GitHub CLI is present.
+### Vercel
 
-## Branch policy & CI guardrails
-- `dev` and `main` are protected via required checks (install, lint, test, build) and conversation resolution.
-- `.github/workflows/guard-direct-push.yml` softly warns on direct pushes to protected branches.
-- `ci.yml` validates install, unit tests, app linting, and Next build for every pull request.
+1. Connect repository to Vercel.
+2. Define environment variables (`NEXT_PUBLIC_SITE_URL`, `WEBSUB_CALLBACK_BASE_URL`, etc.) in the dashboard.
+3. Deploy (Vercel runs `npm run build` by default).
 
-## Useful scripts
-- `pnpm --filter web lint` – Next.js lint with the app's configuration.
-- `pnpm --filter web build` – Production build for verification or Vercel prebuilds.
-- `pnpm --filter @hack2025/shared test` – Run only shared utility tests.
+### Self-hosted / Docker
 
-For additional context on architectural decisions and follow-up ideas, see `docs/INTEGRATION_NOTES.md`.
+1. Install dependencies: `npm install`.
+2. Build assets: `npm run build`.
+3. Start production server: `npm run start` (ensure `NODE_ENV=production`).
+4. Use a reverse proxy (Nginx/Caddy) with HTTPS to expose the app publicly.
+5. Provide environment variables (see `.env` snippet) when launching the container. Example `docker run` flags:
+   ```bash
+   docker run -p 3000:3000 \
+     -e NEXT_PUBLIC_SITE_URL=https://news.example.com \
+     -e WEBSUB_CALLBACK_BASE_URL=https://news.example.com \
+     -e OPENAI_BASE_URL=http://ollama:11434/v1 \
+     -e OPENAI_MODEL=llama3.1:8b-instruct-q4_0 \
+     -e OPENAI_API_KEY=sk-local \
+     hack2025-frontend
+   ```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License.
