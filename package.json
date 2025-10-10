@@ -18,6 +18,9 @@
     "rss-parser": "^3.13.0",
     "ioredis": "^5.4.1"
   },
+  "optionalDependencies": {
+    "canvas": "^2.11.2"
+  },
   "devDependencies": {
     "@types/node": "^20.7.0",
     "@types/react": "^18.2.14",
