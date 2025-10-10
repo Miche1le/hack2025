@@ -8,34 +8,34 @@ interface OnboardingProps {
 
 const steps = [
   {
-    title: "Welcome to NewsHub",
-    description: "Your intelligent news aggregator powered by AI",
+    title: "Добро пожаловать в NewsHub",
+    description: "Ваш интеллектуальный агрегатор новостей на базе ИИ",
     icon: "✨",
-    content: "Discover, organize, and stay informed with personalized news from your favorite sources.",
+    content: "Открывайте, организуйте и будьте в курсе персонализированных новостей из ваших любимых источников.",
   },
   {
-    title: "Add Your Sources",
-    description: "Import RSS feeds from any website",
+    title: "Добавьте источники",
+    description: "Импортируйте RSS-ленты с любых сайтов",
     icon: "📰",
-    content: "Click the Settings icon to add RSS feeds. We support up to 15 feeds from any news source.",
+    content: "Нажмите на иконку настроек, чтобы добавить RSS-ленты. Поддерживается до 15 источников новостей.",
   },
   {
-    title: "Filter with Keywords",
-    description: "Focus on what matters to you",
+    title: "Фильтруйте по ключевым словам",
+    description: "Сосредоточьтесь на том, что важно для вас",
     icon: "🔍",
-    content: "Use keywords to filter articles. Our AI understands context and shows the most relevant stories.",
+    content: "Используйте ключевые слова для фильтрации статей. Наш ИИ понимает контекст и показывает самые релевантные истории.",
   },
   {
-    title: "Star Your Favorites",
-    description: "Build your personal collection",
+    title: "Сохраняйте избранное",
+    description: "Создайте свою личную коллекцию",
     icon: "⭐",
-    content: "Click the heart icon to save articles. Our AI learns from your choices to recommend similar content.",
+    content: "Нажмите на иконку сердца, чтобы сохранить статьи. Наш ИИ учится на ваших выборах и рекомендует похожий контент.",
   },
   {
-    title: "AI-Powered Recommendations",
-    description: "Discover relevant stories automatically",
+    title: "Рекомендации на базе ИИ",
+    description: "Автоматически находите релевантные истории",
     icon: "🤖",
-    content: "As you star articles, our AI analyzes your preferences and suggests similar stories you'll love.",
+    content: "Когда вы сохраняете статьи, наш ИИ анализирует ваши предпочтения и предлагает похожие истории, которые вам понравятся.",
   },
 ];
 
@@ -80,7 +80,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
             className="h-full rounded-full transition-all duration-500"
             style={{
               width: `${progress}%`,
-              background: "linear-gradient(90deg, #667eea 0%, #764ba2 100%)",
+              background: "var(--accent)",
             }}
           />
         </div>
@@ -88,10 +88,11 @@ export function Onboarding({ onComplete }: OnboardingProps) {
         {/* Icon */}
         <div className="mb-6 flex justify-center">
           <div
-            className="flex h-20 w-20 items-center justify-center rounded-full text-4xl"
+            className="flex h-20 w-20 items-center justify-center rounded-2xl text-4xl transition-all duration-300 hover:scale-110"
             style={{
-              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-              boxShadow: "0 10px 40px rgba(102, 126, 234, 0.3)",
+              background: "var(--surface)",
+              border: "2px solid var(--border)",
+              boxShadow: "0 4px 24px rgba(0, 0, 0, 0.1)",
             }}
           >
             {step.icon}
@@ -118,7 +119,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
             className="rounded-xl px-6 py-3 text-sm font-semibold transition hover:opacity-60"
             style={{ color: "var(--text-secondary)" }}
           >
-            Skip
+            Пропустить
           </button>
 
           <div className="flex gap-2">
@@ -136,12 +137,14 @@ export function Onboarding({ onComplete }: OnboardingProps) {
 
           <button
             onClick={handleNext}
-            className="rounded-xl px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:shadow-xl"
+            className="rounded-xl px-6 py-3 text-sm font-semibold transition-all duration-300 hover:scale-105 hover:shadow-xl"
             style={{
-              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              background: "var(--accent)",
+              color: "white",
+              boxShadow: "0 4px 16px rgba(0, 0, 0, 0.15)",
             }}
           >
-            {currentStep === steps.length - 1 ? "Get Started" : "Next"}
+            {currentStep === steps.length - 1 ? "Начать" : "Далее"}
           </button>
         </div>
       </div>
