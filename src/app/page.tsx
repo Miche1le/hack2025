@@ -5,9 +5,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArticleCard } from "@/components/ArticleCard";
 import { Onboarding } from "@/components/Onboarding";
 import type { Article } from "@/types";
+import { useFeedsStorage } from "@/hooks/useFeedsStorage";
 
-const DEFAULT_FEED =
-  "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml";
 const EMPTY_FEED_ERROR = "Добавьте хотя бы одну RSS-ленту.";
 const GENERIC_FETCH_ERROR = "Не удалось обновить ленты. Попробуйте еще раз.";
 const MAX_FEEDS = 15;
@@ -59,9 +58,11 @@ async function fetchArticles(
 }
 
 export default function HomePage() {
+  const { getSavedFeeds, saveFeeds, resetToDefaultFeeds, DEFAULT_FEED } = useFeedsStorage();
+  
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
-  const [feedsInput, setFeedsInput] = useState(DEFAULT_FEED);
+  const [feedsInput, setFeedsInput] = useState(() => getSavedFeeds());
   const [query, setQuery] = useState("");
   const [articles, setArticles] = useState<Article[]>([]);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
@@ -318,6 +319,9 @@ export default function HomePage() {
       const feeds = parseFeeds(feedsInput);
       const normalizedQuery = query.trim();
 
+      // Сохраняем ленты в localStorage
+      saveFeeds(feedsInput);
+
       lastRequestRef.current =
         feeds.length === 0 ? null : { feeds, query: normalizedQuery };
       await performFetch(feeds, normalizedQuery, "manual");
@@ -332,9 +336,17 @@ export default function HomePage() {
     }
     didInitialFetchRef.current = true;
 
-    const feeds = parseFeeds(DEFAULT_FEED);
+    const feeds = parseFeeds(feedsInput);
     lastRequestRef.current = { feeds, query: "" };
     void performFetch(feeds, "", "initial");
+  }, [performFetch, feedsInput]);
+
+  const handleResetFeeds = useCallback(() => {
+    const defaultFeeds = resetToDefaultFeeds();
+    setFeedsInput(defaultFeeds);
+    const feeds = parseFeeds(defaultFeeds);
+    lastRequestRef.current = { feeds, query: "" };
+    void performFetch(feeds, "", "manual");
   }, [performFetch]);
 
   const showEmptyState =
@@ -568,17 +580,31 @@ export default function HomePage() {
                     </p>
                   </div>
                 </div>
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 text-sm font-medium hover:opacity-90 transition"
-                  style={{
-                    background: "var(--accent)",
-                    color: "var(--background)",
-                    border: "1px solid var(--card-border)",
-                  }}
-                >
-                  Применить изменения
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 text-sm font-medium hover:opacity-90 transition"
+                    style={{
+                      background: "var(--accent)",
+                      color: "var(--background)",
+                      border: "1px solid var(--card-border)",
+                    }}
+                  >
+                    Применить изменения
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleResetFeeds}
+                    className="px-5 py-2.5 text-sm font-medium hover:opacity-90 transition"
+                    style={{
+                      background: "var(--surface)",
+                      color: "var(--text-primary)",
+                      border: "1px solid var(--card-border)",
+                    }}
+                  >
+                    Сбросить к стандартным
+                  </button>
+                </div>
               </form>
             </div>
           </div>
