@@ -74,6 +74,7 @@ export default function HomePage() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [activeTab, setActiveTab] = useState<"all" | "favorites">("all");
   const [showSettings, setShowSettings] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Check if first visit
   useEffect(() => {
@@ -91,6 +92,18 @@ export default function HomePage() {
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
+
+  // Блокировка прокрутки при открытом мобильном меню
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileMenuOpen]);
 
   const toggleTheme = () => {
     setTheme((prev) => (prev === "light" ? "dark" : "light"));
@@ -365,8 +378,9 @@ export default function HomePage() {
             borderBottom: `1px solid var(--card-border)`,
           }}
         >
-          <div className="mx-auto max-w-[1600px] px-8">
+          <div className="mx-auto max-w-[1600px] px-4 md:px-8">
             <div className="flex h-16 items-center justify-between">
+              {/* Logo и Desktop Navigation */}
               <div className="flex items-center md:gap-12 gap-4">
                 <span
                   className="text-2xl font-bold tracking-tight"
@@ -374,7 +388,8 @@ export default function HomePage() {
                 >
                   N.
                 </span>
-                <div className="flex items-center md:gap-8 gap-4">
+                {/* Desktop menu */}
+                <div className="hidden md:flex items-center gap-8">
                   <button
                     onClick={() => setActiveTab("all")}
                     className={`text-sm font-medium transition ${activeTab === "all" ? "opacity-100" : "opacity-40 hover:opacity-100"}`}
@@ -399,7 +414,8 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-4">
+              {/* Desktop Actions */}
+              <div className="hidden md:flex items-center gap-4">
                 <button
                   onClick={toggleTheme}
                   className="flex items-center gap-2 text-sm font-medium opacity-40 hover:opacity-100 transition"
@@ -420,7 +436,7 @@ export default function HomePage() {
                           d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
                         />
                       </svg>
-                      <span className="hidden md:inline">Темная</span>
+                      <span>Темная</span>
                     </>
                   ) : (
                     <>
@@ -437,7 +453,7 @@ export default function HomePage() {
                           d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
                         />
                       </svg>
-                      <span className="hidden md:inline">Светлая</span>
+                      <span>Светлая</span>
                     </>
                   )}
                 </button>
@@ -479,7 +495,7 @@ export default function HomePage() {
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         ></path>
                       </svg>
-                      <span className="hidden md:inline">Обновление</span>
+                      <span>Обновление</span>
                     </>
                   ) : (
                     <>
@@ -496,14 +512,342 @@ export default function HomePage() {
                           d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                         />
                       </svg>
-                      <span className="hidden md:inline">Обновить</span>
+                      <span>Обновить</span>
                     </>
+                  )}
+                </button>
+              </div>
+
+              {/* Mobile Actions */}
+              <div className="flex md:hidden items-center gap-3">
+                <button
+                  onClick={() =>
+                    void performFetch(
+                      parseFeeds(feedsInput),
+                      query.trim(),
+                      "manual",
+                    )
+                  }
+                  disabled={loading}
+                  className="flex items-center justify-center w-10 h-10 text-sm font-medium transition hover:opacity-80 disabled:opacity-50"
+                  style={{
+                    background: "var(--accent)",
+                    color: "var(--background)",
+                    border: "1px solid var(--card-border)",
+                  }}
+                >
+                  {loading ? (
+                    <svg
+                      className="h-4 w-4 animate-spin"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                  ) : (
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                      />
+                    </svg>
+                  )}
+                </button>
+                
+                {/* Burger Menu Button */}
+                <button
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  className="flex items-center justify-center w-10 h-10 transition hover:opacity-80"
+                  style={{ color: "var(--text-primary)" }}
+                  aria-label="Меню"
+                >
+                  {mobileMenuOpen ? (
+                    <svg
+                      className="h-6 w-6"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  ) : (
+                    <svg
+                      className="h-6 w-6"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 6h16M4 12h16M4 18h16"
+                      />
+                    </svg>
                   )}
                 </button>
               </div>
             </div>
           </div>
         </nav>
+
+        {/* Mobile Menu Overlay */}
+        {mobileMenuOpen && (
+          <div
+            className="fixed inset-0 z-40 bg-black bg-opacity-50 md:hidden"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+        )}
+
+        {/* Mobile Menu Sidebar */}
+        <div
+          className={`fixed top-0 right-0 bottom-0 z-50 w-80 max-w-[85vw] transform transition-transform duration-300 ease-in-out md:hidden ${
+            mobileMenuOpen ? "translate-x-0" : "translate-x-full"
+          }`}
+          style={{
+            background: "var(--background)",
+            borderLeft: `1px solid var(--card-border)`,
+          }}
+        >
+          <div className="flex flex-col h-full">
+            {/* Mobile Menu Header */}
+            <div
+              className="flex items-center justify-between p-6 border-b"
+              style={{ borderColor: "var(--card-border)" }}
+            >
+              <span
+                className="text-xl font-bold tracking-tight"
+                style={{ color: "var(--text-primary)" }}
+              >
+                Меню
+              </span>
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center justify-center w-10 h-10 transition hover:opacity-80"
+                style={{ color: "var(--text-primary)" }}
+              >
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {/* Mobile Menu Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <nav className="space-y-1">
+                <button
+                  onClick={() => {
+                    setActiveTab("all");
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`w-full text-left px-4 py-3 rounded-lg text-base font-medium transition ${
+                    activeTab === "all"
+                      ? "opacity-100"
+                      : "opacity-60 hover:opacity-100"
+                  }`}
+                  style={{
+                    background:
+                      activeTab === "all" ? "var(--surface)" : "transparent",
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <svg
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"
+                      />
+                    </svg>
+                    <span>Последние новости</span>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab("favorites");
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`w-full text-left px-4 py-3 rounded-lg text-base font-medium transition ${
+                    activeTab === "favorites"
+                      ? "opacity-100"
+                      : "opacity-60 hover:opacity-100"
+                  }`}
+                  style={{
+                    background:
+                      activeTab === "favorites"
+                        ? "var(--surface)"
+                        : "transparent",
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <svg
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                      />
+                    </svg>
+                    <span>Избранное</span>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowSettings(!showSettings);
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full text-left px-4 py-3 rounded-lg text-base font-medium opacity-60 hover:opacity-100 transition"
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  <div className="flex items-center gap-3">
+                    <svg
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                    </svg>
+                    <span>Настройки</span>
+                  </div>
+                </button>
+
+                <div className="my-4 border-t" style={{ borderColor: "var(--card-border)" }} />
+
+                <button
+                  onClick={() => {
+                    toggleTheme();
+                  }}
+                  className="w-full text-left px-4 py-3 rounded-lg text-base font-medium opacity-60 hover:opacity-100 transition"
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  <div className="flex items-center gap-3">
+                    {theme === "light" ? (
+                      <>
+                        <svg
+                          className="h-5 w-5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                          />
+                        </svg>
+                        <span>Темная тема</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          className="h-5 w-5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                          />
+                        </svg>
+                        <span>Светлая тема</span>
+                      </>
+                    )}
+                  </div>
+                </button>
+              </nav>
+
+              {/* Mobile Menu Stats */}
+              <div className="mt-8 p-4 rounded-lg" style={{ background: "var(--surface)" }}>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between" style={{ color: "var(--text-secondary)" }}>
+                    <span>Всего статей</span>
+                    <span style={{ color: "var(--text-primary)" }} className="font-medium">
+                      {articles.length}
+                    </span>
+                  </div>
+                  <div className="flex justify-between" style={{ color: "var(--text-secondary)" }}>
+                    <span>Избранных</span>
+                    <span style={{ color: "var(--text-primary)" }} className="font-medium">
+                      {favorites.size}
+                    </span>
+                  </div>
+                  {lastUpdatedLabel && (
+                    <div className="flex justify-between" style={{ color: "var(--text-secondary)" }}>
+                      <span>Обновлено</span>
+                      <span style={{ color: "var(--text-primary)" }} className="font-medium">
+                        {lastUpdatedLabel}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Settings Panel */}
         {showSettings && (
