@@ -77,9 +77,12 @@ function calculateSearchScore(
       score += weight * 10;
 
       // Bonus for word boundary match (not part of larger word)
+      // Use Unicode-aware word boundaries that work with Cyrillic and other scripts
+      const escapedTerm = lowerTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      // Use negative lookahead/lookbehind with Unicode letter/number classes
       const regex = new RegExp(
-        `\\b${lowerTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`,
-        "gi",
+        `(?<!\\p{L}|\\p{N})${escapedTerm}(?!\\p{L}|\\p{N})`,
+        "gimu",
       );
       const matches = lowerText.match(regex);
       if (matches) {
@@ -89,7 +92,8 @@ function calculateSearchScore(
 
     // Partial word matches (for longer terms)
     if (lowerTerm.length > 4) {
-      const words = lowerText.split(/\s+/);
+      // Split by non-letter/non-number characters to get words
+      const words = lowerText.split(/[^\p{L}\p{N}]+/u);
       for (const word of words) {
         if (word.includes(lowerTerm) || lowerTerm.includes(word)) {
           score += weight * 2;

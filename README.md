@@ -48,10 +48,11 @@ yarn install
 3. Copy the environment template and configure:
 
 ```bash
-cp .env.example .env.local
+# См. ENV_TEMPLATE.md для полного списка переменных
+touch .env.local
 ```
 
-Edit `.env.local` with values similar to the following (values shown below assume an Ollama instance reachable at `http://localhost:11434`):
+Edit `.env.local` with values similar to the following (см. [ENV_TEMPLATE.md](./ENV_TEMPLATE.md) для шаблона):
 
 ```env
 # Required: public URL for metadata, feeds, and ActivityPub endpoints
@@ -69,8 +70,14 @@ OPENAI_API_KEY=sk-local
 OPENAI_MODEL=llama3.1:8b-instruct-q4_0
 OPENAI_BASE_URL=http://localhost:11434/v1
 
+# Optional: Redis for RSS feed caching (highly recommended)
+REDIS_URL=redis://localhost:6379
+# or for Vercel KV:
+# KV_URL=redis://default:password@your-kv-endpoint.kv.vercel-storage.com
+
 # Optional tuning
 SUMMARY_CACHE_TTL_MS=1800000
+RSS_CACHE_TTL_SECONDS=300
 ```
 
 4. Run the development server:
@@ -152,7 +159,14 @@ Regardless of platform, ensure the application is exposed publicly (HTTPS) so We
 
 1. Connect repository to Vercel.
 2. Define environment variables (`NEXT_PUBLIC_SITE_URL`, `WEBSUB_CALLBACK_BASE_URL`, etc.) in the dashboard.
-3. Deploy (Vercel runs `npm run build` by default).
+3. **(Рекомендуется) Настройте Redis для кэширования:** См. [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) для подробных инструкций.
+4. Deploy (Vercel runs `npm run build` by default).
+
+**Redis кэширование (опционально):**
+- Значительно ускоряет загрузку RSS фидов
+- Снижает нагрузку на источники новостей
+- Vercel KV (встроенное решение) или Upstash
+- См. подробную инструкцию в [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md)
 
 ### Self-hosted / Docker
 
