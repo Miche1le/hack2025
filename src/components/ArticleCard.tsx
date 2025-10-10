@@ -72,7 +72,7 @@ export function ArticleCard({
 
   return (
     <article
-      className="group relative border-b py-8 transition-opacity duration-300 hover-card"
+      className="group relative border-b py-8 transition-opacity duration-300 "
       style={{
         borderColor: "var(--card-border)",
         opacity: isRead ? 0.4 : 1,
