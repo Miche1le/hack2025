@@ -16,21 +16,33 @@ function getRedisClient(): Redis | null {
     return redisClient;
   }
 
-  const url = process.env.REDIS_URL;
+  // Поддержка различных форматов Redis URL
+  // REDIS_URL - стандартный формат (redis://...)
+  // KV_URL - Vercel KV (совместимость с @vercel/kv)
+  const url = process.env.REDIS_URL || process.env.KV_URL;
   if (!url) {
+    console.log("Redis URL not configured - caching disabled");
     return null;
   }
 
-  redisClient = new Redis(url, {
-    lazyConnect: true,
-    maxRetriesPerRequest: 1,
-  });
+  try {
+    redisClient = new Redis(url, {
+      lazyConnect: true,
+      maxRetriesPerRequest: 1,
+      // Для Vercel - включаем TLS для production
+      tls: url.startsWith("rediss://") ? {} : undefined,
+    });
 
-  redisClient.on("error", (error) => {
-    console.warn("Redis connection error", error);
-  });
+    redisClient.on("error", (error) => {
+      console.warn("Redis connection error", error);
+    });
 
-  return redisClient;
+    console.log("Redis client initialized successfully");
+    return redisClient;
+  } catch (error) {
+    console.error("Failed to initialize Redis client", error);
+    return null;
+  }
 }
 
 async function ensureConnected(client: Redis): Promise<void> {
