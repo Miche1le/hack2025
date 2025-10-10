@@ -10,6 +10,11 @@ const nextConfig = {
     if (isServer) {
       config.externals.push('canvas');
     }
+    // Fallback for canvas module
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      canvas: false,
+    };
     return config;
   },
 }
