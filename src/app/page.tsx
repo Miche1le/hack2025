@@ -457,8 +457,8 @@ export default function HomePage() {
                 ? `${articles.length} articles from your feeds`
                 : `${favorites.size} saved articles`}
               {lastUpdatedLabel && ` · Updated ${lastUpdatedLabel}`}
-            </p>
-          </div>
+          </p>
+        </div>
         </div>
 
         <div className="grid gap-12 lg:grid-cols-12">
@@ -592,7 +592,7 @@ export default function HomePage() {
                     : "No recommendations available."}
                 </p>
               )}
-            </div>
+          </div>
           </aside>
         </div>
     </main>
